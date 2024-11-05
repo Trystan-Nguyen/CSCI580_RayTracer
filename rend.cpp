@@ -459,28 +459,6 @@ int GzRender::GzPutAttribute(int numAttributes, GzToken	*nameList, GzPointer *va
 //-----------------------------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------
 
-
-static struct point {
-	float x;
-	float y;
-	float z;
-};
-static struct normsList {
-	Vector3 lStart;
-	Vector3 lEnd;
-	Vector3 rStart;
-	Vector3 rEnd;
-	Vector3 Override = Vector3(0, 0, 0);
-	int midLongIndex = -1;
-	float totalDist = 0.0f;
-};
-static struct CoordPair {
-	Vector3* position;
-	Vector3* norms;
-	Vector3* uvs;
-	float* vz;
-};
-
 int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueList)
 /* numParts - how many names and values */
 {
@@ -493,7 +471,7 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 	*/
 
 	Vector3 transformedCoords[] = {
-				Vector3(0,0,0), Vector3(0,0,0), Vector3(0,0,0)
+		Vector3(0,0,0), Vector3(0,0,0), Vector3(0,0,0)
 	};
 	Vector3 transformedNorms[] = {
 		Vector3(0,0,0), Vector3(0,0,0), Vector3(0,0,0)
@@ -548,6 +526,7 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 					UVCoords[j].base[0] = uvs[2 * j + 0];
 					UVCoords[j].base[1] = uvs[2 * j + 1];
 				}
+				printf("");
 			}
 
 			default:
@@ -564,8 +543,16 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 		tri.SetNorms(i, transformedNorms[i]);
 		tri.SetUV(i, UVCoords[i]);
 	}
+	//tri.SetKa(this->Ka[0], this->Ka[1], this->Ka[2]);
+	//tri.SetKd(this->Kd[0], this->Kd[1], this->Kd[2]);
+	//tri.SetKs(this->Ks[0], this->Ks[1], this->Ks[2]);
+	//tri.SetSpec(this->spec);
 
 	triangleList[numTriangles++] = tri;
+
+	float u_test = tri.data[18 + (3 * 2) + 0];
+	float v_test = tri.data[18 + (3 * 2) + 1];
+	Vector3 a = tri.GetUV(2);
 
 	return GZ_SUCCESS;
 }
@@ -601,50 +588,75 @@ void GzRender::RayTrace()
 			Vector3* intersectPos = new Vector3(0, 0, 0);
 			RayCast(origin, ray, triIndex, intersectPos);
 
+			if (*triIndex == 24) track = true;
+
 			if (*triIndex != -1) {
-				GzPut(x, y, 0, 0, 0, 1, 1);
+				Vector3 color = ComputeShading(*triIndex, intersectPos);
+				GzPut(x, y, color.base[0], color.base[1], color.base[2], 1, 1);
+				//else GzPut(x, y, 0, 0, 0, 1, 1);
 			}
 
 			delete intersectPos;
 			delete triIndex;
+
+			track = false;
 		}
 	}
 }
 
 
 void GzRender::RayCast(Vector3 origin, Vector3 direction, int* triangleIndex, Vector3* position) {
-	int index = -1;
 	float dist = MAXINT;
-	Vector3* finalPos = NULL;
-
 	for (int i = 0; i < numTriangles; ++i)
 	{
 		Triangle current = triangleList[i];
 		Vector3 normal = (current.GetPosition(1).Subtract(current.GetPosition(0)).Crossproduct(current.GetPosition(2).Subtract(current.GetPosition(0)))).Normalize();
-		Vector3 position = Vector3(0, 0, 0);
-		if (track)
-			printf("");
+		Vector3 p = Vector3(0, 0, 0);
 
-		float currentMag = intersection(origin, direction, current.GetPosition(0), normal, &position, track);
+		float currentMag = intersection(origin, direction, current.GetPosition(0), normal, &p, track);
 		Vector3 triangleCoords[] = {
 			current.GetPosition(0),
 			current.GetPosition(1),
 			current.GetPosition(2)
 		};
-		bool inTriangle = positionInTriangle(triangleCoords, position);
+		bool inTriangle = positionInTriangle(triangleCoords, p);
 
 		if (inTriangle && currentMag != -1 && currentMag < dist) {
+			for (int j = 0; j < 3; ++j) {
+				position->base[j] = p.base[j];
+			}
+			*triangleIndex = i;
 			dist = currentMag;
-			finalPos = &position;
-			index = i;
 		}
 	}
+}
 
-	if (index > -1 && finalPos != NULL)
-	{
-		*triangleIndex = index;
-		for (int i = 0; i < 3; ++i) position->base[i] = finalPos->base[i];
-		printf("");
+Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
+	Triangle tri = this->triangleList[triIndex];
+	Vector3 coordData[] = { tri.GetPosition(0), tri.GetPosition(1) , tri.GetPosition(2) };
+	Vector3 normData[] = { tri.GetNorms(0), tri.GetNorms(1) , tri.GetNorms(2) };
+	
+	Vector3 E = Vector3(0, 0, -1);
+	Vector3 N = interpolateVector3(coordData, *intersection, normData).Normalize();
+	//Vector3 N = norm;
+
+	GzColor baseColor = { 0,0,0 };
+	if (tri.useTexture) {
+		Vector3 uvData[] = {tri.GetUV(0), tri.GetUV(1) , tri.GetUV(2)};
+		Vector3 intersectionUV = interpolateVector3(coordData, *intersection, uvData);
+		this->tex_fun(intersectionUV.base[0], intersectionUV.base[0], baseColor);
 	}
-	else *triangleIndex = -1;
+	else {
+		baseColor[0] = 1.0;
+		baseColor[1] = 1.0;
+		baseColor[2] = 1.0;
+	}
+
+	//Vector3 illumination(0, 0, 0);
+
+	Vector3 color(0, 0, 0);
+	for (int i = 0; i < 3; ++i) {
+		color.base[i] = this->ctoi(N.base[i]);
+	}
+	return color;
 }

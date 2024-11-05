@@ -226,7 +226,7 @@ float intersection(Vector3 rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 
 	float mag = 0;
 	for (int i = 0; i < 3; ++i) {
 		position->base[i] = intersection.base[i];
-		mag += pow(rayOrigin.base[i] + intersection.base[i], 2);
+		mag += pow(rayOrigin.base[i] - intersection.base[i], 2);
 	}
 	return sqrtf(mag);
 }

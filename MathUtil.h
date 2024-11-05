@@ -56,6 +56,7 @@ class Triangle
 {
 public:
 	float* data;
+	bool useTexture = true;
 	Triangle::Triangle() {
 		data = new float[37]();
 	}
@@ -73,16 +74,48 @@ public:
 		data[9 + 3 * index + 2] = xyz.base[2];
 	}
 	Vector3 Triangle::GetNorms(int index) {
-		return Vector3(data[9 + 3 * index + 0], data[9 + 3 * index + 1], data[9 + 3 * index + 2]);
+		return Vector3(data[9 + (3 * index) + 0], data[9 + (3 * index) + 1], data[9 + (3 * index) + 2]);
 	}
 	void Triangle::SetUV(int index, Vector3 xyz) {
-		data[18 + 3 * index + 0] = xyz.base[0];
-		data[18 + 3 * index + 1] = xyz.base[1];
-		data[18 + 3 * index + 2] = xyz.base[2];
+		data[18 + (3 * index) + 0] = xyz.base[0];
+		data[18 + (3 * index) + 1] = xyz.base[1];
+		data[18 + (3 * index) + 2] = 0;
 	}
 	Vector3 Triangle::GetUV(int index) {
-		return Vector3(data[18 + 3 * index + 0], data[18 + 3 * index + 1], data[18 + 3 * index + 2]);
+		Vector3 ret = Vector3(data[18 + (3 * index) + 0], data[18 + (3 * index) + 1], data[18 + (3 * index) + 2]);
+		return ret;
 	}
+
+	void Triangle::SetKa(float r, float g, float b) {
+		data[27 + 0] = r;
+		data[27 + 1] = g;
+		data[27 + 2] = b;
+	}
+	Vector3 Triangle::GetKa() {
+		return Vector3(data[27 + 0], data[27 + 1], data[27 + 2]);
+	}
+	void Triangle::SetKd(float r, float g, float b) {
+		data[30 + 0] = r;
+		data[30 + 1] = g;
+		data[30 + 2] = b;
+	}
+	Vector3 Triangle::GetKd() {
+		return Vector3(data[30 + 0], data[30 + 1], data[30 + 2]);
+	}
+	void Triangle::SetKs(float r, float g, float b) {
+		data[33 + 0] = r;
+		data[33 + 1] = g;
+		data[33 + 2] = b;
+	}
+	Vector3 Triangle::GetKs() {
+		return Vector3(data[33 + 0], data[33 + 1], data[33 + 2]);
+	}
+	void Triangle::SetSpec(float s) {
+		data[34] = s;
+	}
+	float Triangle::SetSpec() { return data[34]; }
+
+
 };
 
 float intersection(Vector3 rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 planeNormal, Vector3* intersection, bool test = false);
