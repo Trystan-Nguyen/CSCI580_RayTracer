@@ -629,7 +629,6 @@ void GzRender::RayCast(Vector3 origin, Vector3 direction, int* triangleIndex, Ve
 			dist = currentMag;
 		}
 	}
-	//test
 }
 
 Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
