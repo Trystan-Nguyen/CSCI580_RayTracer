@@ -80,9 +80,18 @@ public:
 		data[18 + (3 * index) + 0] = xyz.base[0];
 		data[18 + (3 * index) + 1] = xyz.base[1];
 		data[18 + (3 * index) + 2] = 0;
+
+		float a = xyz.base[0];
+		float b = xyz.base[1];
+
+		return;
 	}
 	Vector3 Triangle::GetUV(int index) {
-		Vector3 ret = Vector3(data[18 + (3 * index) + 0], data[18 + (3 * index) + 1], data[18 + (3 * index) + 2]);
+		Vector3 ret = Vector3(data[18 + (3 * index) + 0], data[18 + (3 * index) + 1], 0);
+
+		float a = data[18 + (3 * index) + 0];
+		float b = data[18 + (3 * index) + 1];
+
 		return ret;
 	}
 
@@ -111,9 +120,9 @@ public:
 		return Vector3(data[33 + 0], data[33 + 1], data[33 + 2]);
 	}
 	void Triangle::SetSpec(float s) {
-		data[34] = s;
+		data[36] = s;
 	}
-	float Triangle::SetSpec() { return data[34]; }
+	float Triangle::GetSpec() { return data[36]; }
 
 
 };

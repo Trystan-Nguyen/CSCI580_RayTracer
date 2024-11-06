@@ -543,6 +543,7 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 		tri.SetNorms(i, transformedNorms[i]);
 		tri.SetUV(i, UVCoords[i]);
 	}
+	// TODO - Material specific parameters
 	//tri.SetKa(this->Ka[0], this->Ka[1], this->Ka[2]);
 	//tri.SetKd(this->Kd[0], this->Kd[1], this->Kd[2]);
 	//tri.SetKs(this->Ks[0], this->Ks[1], this->Ks[2]);
@@ -550,15 +551,15 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 
 	triangleList[numTriangles++] = tri;
 
-	float u_test = tri.data[18 + (3 * 2) + 0];
-	float v_test = tri.data[18 + (3 * 2) + 1];
-	Vector3 a = tri.GetUV(2);
+	float u_test = tri.data[18 + (3 * 0) + 0];
+	float v_test = tri.data[18 + (3 * 0) + 1];
+	Vector3 a = tri.GetUV(0);
 
 	return GZ_SUCCESS;
 }
 
 bool track = false;
-void GzRender::RayTrace()
+void GzRender::RayTrace()		
 {
 	float fov = 60.0;
 	float aspectRatio = float(xres) / yres;
@@ -572,6 +573,8 @@ void GzRender::RayTrace()
 
 	for (int x = 0; x < xres; ++x) {
 		for (int y = 0; y < yres; ++y) {
+			// TODO - Antialiasing by rays
+
 			// Center of pixel
 			float cx = float(2 * x + 1) / (2 * xres);
 			float cy = float(2 * y + 1) / (2 * yres);
@@ -588,18 +591,13 @@ void GzRender::RayTrace()
 			Vector3* intersectPos = new Vector3(0, 0, 0);
 			RayCast(origin, ray, triIndex, intersectPos);
 
-			if (*triIndex == 24) track = true;
-
 			if (*triIndex != -1) {
 				Vector3 color = ComputeShading(*triIndex, intersectPos);
 				GzPut(x, y, color.base[0], color.base[1], color.base[2], 1, 1);
-				//else GzPut(x, y, 0, 0, 0, 1, 1);
 			}
 
 			delete intersectPos;
 			delete triIndex;
-
-			track = false;
 		}
 	}
 }
@@ -613,7 +611,7 @@ void GzRender::RayCast(Vector3 origin, Vector3 direction, int* triangleIndex, Ve
 		Vector3 normal = (current.GetPosition(1).Subtract(current.GetPosition(0)).Crossproduct(current.GetPosition(2).Subtract(current.GetPosition(0)))).Normalize();
 		Vector3 p = Vector3(0, 0, 0);
 
-		float currentMag = intersection(origin, direction, current.GetPosition(0), normal, &p, track);
+		float currentMag = intersection(origin, direction, current.GetPosition(0), normal, &p);
 		Vector3 triangleCoords[] = {
 			current.GetPosition(0),
 			current.GetPosition(1),
@@ -638,13 +636,12 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
 	
 	Vector3 E = Vector3(0, 0, -1);
 	Vector3 N = interpolateVector3(coordData, *intersection, normData).Normalize();
-	//Vector3 N = norm;
 
 	GzColor baseColor = { 0,0,0 };
 	if (tri.useTexture) {
 		Vector3 uvData[] = {tri.GetUV(0), tri.GetUV(1) , tri.GetUV(2)};
 		Vector3 intersectionUV = interpolateVector3(coordData, *intersection, uvData);
-		this->tex_fun(intersectionUV.base[0], intersectionUV.base[0], baseColor);
+		this->tex_fun(intersectionUV.base[0], intersectionUV.base[1], baseColor);
 	}
 	else {
 		baseColor[0] = 1.0;
@@ -652,11 +649,49 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
 		baseColor[2] = 1.0;
 	}
 
-	//Vector3 illumination(0, 0, 0);
+	Vector3 illumination(0, 0, 0);
+	for (int i = 0; i < 3; ++i) {
+		illumination.base[i] = baseColor[i] * this->ambientlight.color[i];
+	}
+
+	// TODO - Reflection
+	// Recalculate reflective vector
+
+	for (int j = 0; j < this->numlights; ++j) {
+		Vector3 L = Vector3(this->lights[j].direction[0], this->lights[j].direction[1], this->lights[j].direction[2]);
+		L = L.Normalize();
+
+		float dot_NL = N.DotProduct(L);
+		float dot_NE = N.DotProduct(E);
+		if (dot_NL >= 0 && dot_NE >= 0) {}
+		else if (dot_NL < 0 && dot_NE < 0) {
+			N = N.Mult(-1);
+			dot_NL = N.DotProduct(L);
+		}
+		else {
+			continue;
+		}
+
+		Vector3 R = (N.Mult(2 * dot_NL)).Subtract(L).Normalize();
+
+		float dot_RE = R.DotProduct(E);
+		if (dot_RE < 0) dot_RE = 0;
+		else if (dot_RE > 1) dot_RE = 1;
+		if (dot_NL < 0) dot_NL = 0;
+		else if (dot_NL > 1) dot_NL = 1;
+
+		// TODO - HARD SHADOW
+		for (int i = 0; i < 3; ++i) {
+			illumination.base[i] += baseColor[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
+			illumination.base[i] += baseColor[i] * this->lights[j].color[i] * dot_NL;
+		}
+	}
+
+	// TODO - AREA LIGHT + SOFT SHADOW
 
 	Vector3 color(0, 0, 0);
 	for (int i = 0; i < 3; ++i) {
-		color.base[i] = this->ctoi(N.base[i]);
+		color.base[i] = this->ctoi(illumination.base[i]);
 	}
 	return color;
 }
