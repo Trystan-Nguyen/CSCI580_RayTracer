@@ -559,8 +559,28 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 }
 
 bool track = false;
+
+// Change based on what you are trying to do
+void configureObject(Triangle* data) {
+	for (int i = 0; i < 2; ++i)
+	{
+		data[i].useTexture = false;
+		data[i].SetKd(0.828125, 0.78515625, 0.7109375);
+	}
+	for (int i = 2; i < 4; ++i)
+	{
+		data[i].useTexture = false;
+		data[i].SetKd(0.8, 0.8, 0.8);
+	}
+}
+
+
+
+
 void GzRender::RayTrace()		
 {
+	configureObject(triangleList);
+
 	float fov = 60.0;
 	float aspectRatio = float(xres) / yres;
 	float left = -aspectRatio * tan(3.14159 * double(fov) / 2 / 180);
@@ -569,7 +589,7 @@ void GzRender::RayTrace()
 	float bot = -tan(3.14159 * double(fov) / 2 / 180);
 
 	//Vector3 origin = Vector3(this->m_camera.position[0], this->m_camera.position[1], this->m_camera.position[2]);
-	Vector3 origin = Vector3(0, 0, this->m_camera.position[2]);
+	Vector3* origin = new Vector3(0, 0, this->m_camera.position[2]);
 
 	for (int x = 0; x < xres; ++x) {
 		for (int y = 0; y < yres; ++y) {
@@ -600,13 +620,15 @@ void GzRender::RayTrace()
 			delete triIndex;
 		}
 	}
+	delete origin;
 }
 
 
-void GzRender::RayCast(Vector3 origin, Vector3 direction, int* triangleIndex, Vector3* position) {
+void GzRender::RayCast(Vector3* origin, Vector3 direction, int* triangleIndex, Vector3* position, int ignoreIndex) {
 	float dist = MAXINT;
 	for (int i = 0; i < numTriangles; ++i)
 	{
+		if (i == ignoreIndex) continue;
 		Triangle current = triangleList[i];
 		Vector3 normal = (current.GetPosition(1).Subtract(current.GetPosition(0)).Crossproduct(current.GetPosition(2).Subtract(current.GetPosition(0)))).Normalize();
 		Vector3 p = Vector3(0, 0, 0);
@@ -644,9 +666,10 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
 		this->tex_fun(intersectionUV.base[0], intersectionUV.base[1], baseColor);
 	}
 	else {
-		baseColor[0] = 1.0;
-		baseColor[1] = 1.0;
-		baseColor[2] = 1.0;
+		Vector3 kd = tri.GetKd();
+		baseColor[0] = kd.base[0];
+		baseColor[1] = kd.base[1];
+		baseColor[2] = kd.base[2];
 	}
 
 	Vector3 illumination(0, 0, 0);
@@ -681,10 +704,18 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
 		else if (dot_NL > 1) dot_NL = 1;
 
 		// TODO - HARD SHADOW
-		for (int i = 0; i < 3; ++i) {
-			illumination.base[i] += baseColor[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
-			illumination.base[i] += baseColor[i] * this->lights[j].color[i] * dot_NL;
+		int* intersectIndex = new int();
+		*intersectIndex = -1;
+		Vector3* intersect2 = new Vector3(0, 0, 0);
+		RayCast(intersection, R, intersectIndex, intersect2, triIndex);
+		if (*intersectIndex == -1) {
+			for (int i = 0; i < 3; ++i) {
+				illumination.base[i] += baseColor[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
+				illumination.base[i] += baseColor[i] * this->lights[j].color[i] * dot_NL;
+			}
 		}
+		delete intersectIndex;
+		delete intersect2;
 	}
 
 	// TODO - AREA LIGHT + SOFT SHADOW

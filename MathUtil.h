@@ -127,7 +127,7 @@ public:
 
 };
 
-float intersection(Vector3 rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 planeNormal, Vector3* intersection, bool test = false);
+float intersection(Vector3* rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 planeNormal, Vector3* intersection, bool test = false);
 bool positionInTriangle(Vector3* triangleCoords, Vector3 position);
 
 
