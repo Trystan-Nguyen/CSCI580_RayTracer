@@ -561,16 +561,16 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 bool track = false;
 
 // Change based on what you are trying to do
-void configureObject(Triangle* data) {
+void configureObject(GzRender* self) {
 	for (int i = 0; i < 2; ++i)
 	{
-		data[i].useTexture = false;
-		data[i].SetKd(0.828125, 0.78515625, 0.7109375);
+		self->triangleList[i].useTexture = false;
+		self->triangleList[i].SetKd(0.828125, 0.78515625, 0.7109375);
 	}
 	for (int i = 2; i < 4; ++i)
 	{
-		data[i].useTexture = false;
-		data[i].SetKd(0.8, 0.8, 0.8);
+		self->triangleList[i].useTexture = false;
+		self->triangleList[i].SetKd(0.8, 0.8, 0.8);
 	}
 }
 
@@ -579,7 +579,7 @@ void configureObject(Triangle* data) {
 
 void GzRender::RayTrace()		
 {
-	configureObject(triangleList);
+	configureObject(this);
 
 	float fov = 60.0;
 	float aspectRatio = float(xres) / yres;
@@ -707,7 +707,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
 		int* intersectIndex = new int();
 		*intersectIndex = -1;
 		Vector3* intersect2 = new Vector3(0, 0, 0);
-		RayCast(intersection, R, intersectIndex, intersect2, triIndex);
+		RayCast(intersection, L, intersectIndex, intersect2, triIndex);
 		if (*intersectIndex == -1) {
 			for (int i = 0; i < 3; ++i) {
 				illumination.base[i] += baseColor[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
