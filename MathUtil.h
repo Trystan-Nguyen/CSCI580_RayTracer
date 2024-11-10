@@ -8,6 +8,7 @@ public:
 	float base[3] = { 0, 0, 0 };
 	Vector3(float x, float y, float z);
 	Vector3(float* a);
+	Vector3() { base[0] = -1; base[1] = -1; base[2] = -1; };
 	Vector3 Subtract(Vector3 v2);
 	Vector3 Add(Vector3 v2);
 	Vector3 Mult(float s);
