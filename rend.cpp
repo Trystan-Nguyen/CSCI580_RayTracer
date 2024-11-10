@@ -559,9 +559,8 @@ bool track = false;
 struct AreaLight {
 	Vector3 position;
 	Vector3 color;
-	float radius = 0;
-	float numRings = 0;
-	float samplesPerRing = 0;
+	float sideLength = 0;
+	float samplePerSide = 0;
 	AreaLight() {};
 };
 bool useAreaLight = false;
@@ -572,14 +571,12 @@ void configureObject(GzRender* self) {
 	for (int i = 0; i < 2; ++i)
 	{
 		self->triangleList[i].useTexture = false;
-		//self->triangleList[i].SetKd(0.828125, 0.78515625, 0.7109375);
-		self->triangleList[i].SetKd(1.0, 1.0, 1.0);
+		self->triangleList[i].SetKd(0.828125, 0.78515625, 0.7109375);
 	}
 	for (int i = 2; i < 4; ++i)
 	{
 		self->triangleList[i].useTexture = false;
-		//self->triangleList[i].SetKd(0.8, 0.8, 0.8);
-		self->triangleList[i].SetKd(1.0, 1.0, 1.0);
+		self->triangleList[i].SetKd(0.8, 0.8, 0.8);
 	}
 	/*
 	self->numlights = 1;
@@ -595,9 +592,8 @@ void configureObject(GzRender* self) {
 	useAreaLight = true;
 	aLight.color = Vector3(1.0, 1.0, 1.0);
 	aLight.position = Vector3(12.875, 100, 142.225);
-	aLight.radius = 25;
-	aLight.numRings = 10;
-	aLight.samplesPerRing = 20;
+	aLight.sideLength = 80;
+	aLight.samplePerSide = 10;
 }
 
 
@@ -700,7 +696,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 
 	Vector3 illumination(0, 0, 0);
 	for (int i = 0; i < 3; ++i) {
-		//illumination.base[i] = baseColor[i] * this->ambientlight.color[i];
+		illumination.base[i] = baseColor[i] * this->ambientlight.color[i];
 	}
 
 	// TODO - Reflection
@@ -736,58 +732,64 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 		RayCast(intersection, L, intersectIndex, intersect2, triIndex);
 		if (*intersectIndex == -1) {
 			for (int i = 0; i < 3; ++i) {
-				//illumination.base[i] += baseColor[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
-				//illumination.base[i] += baseColor[i] * this->lights[j].color[i] * dot_NL;
+				illumination.base[i] += baseColor[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
+				illumination.base[i] += baseColor[i] * this->lights[j].color[i] * dot_NL;
 			}
 		}
 		delete intersectIndex;
 		delete intersect2;
 	}
 
-	// TODO - AREA LIGHT + SOFT SHADOW
-	float lightIntensity = 1.0 / (aLight.numRings * aLight.samplesPerRing);
-	for (int n = 0; n < aLight.numRings; ++n) {
-		float radius = aLight.radius * n * aLight.numRings;
-		if (radius == 0) radius = 0.5;
-		for (int i = 0; i < aLight.samplesPerRing; ++i){
-			float radians = 2 * 3.14159 * (i / aLight.samplesPerRing);
-			float xOffset = radius * cos(radians);
-			float zOffset = radius * sin(radians);
+	// SOFT SHADOW
+	{
+		float lightIntensity = 0;
+		for (int x = 0; x < aLight.samplePerSide; ++x) {
+			for (int y = 0; y < aLight.samplePerSide; ++y) {
+				for (int z = 0; z < aLight.samplePerSide; ++z) {
+					float offsetX = aLight.sideLength * (x / aLight.samplePerSide) - (aLight.sideLength / 2);
+					float offsetY = aLight.sideLength * (y / aLight.samplePerSide) - (aLight.sideLength / 2);
+					float offsetZ = aLight.sideLength * (z / aLight.samplePerSide) - (aLight.sideLength / 2);
+					Vector3 lightPosition = Vector3(aLight.position.base[0] + offsetX, aLight.position.base[1] + offsetY, aLight.position.base[2] + offsetZ);
+					Vector3 L = lightPosition.Subtract(*intersection).Normalize();
+					int* intersectIndex = new int();
+					*intersectIndex = -1;
+					Vector3* intersect2 = new Vector3(0, 0, 0);
+					RayCast(intersection, L, intersectIndex, intersect2, triIndex);
 
-			Vector3 lightPosition = Vector3(aLight.position.base[0] + xOffset, aLight.position.base[1], aLight.position.base[2] + zOffset);
-			Vector3 L = lightPosition.Subtract(*intersection).Normalize();
-			int* intersectIndex = new int();
-			*intersectIndex = -1;
-			Vector3* intersect2 = new Vector3(0, 0, 0);
-			RayCast(intersection, L, intersectIndex, intersect2, triIndex);
-
-			if (*intersectIndex == -1) {
-				float dot_NL = N.DotProduct(L);
-				float dot_NE = N.DotProduct(E);
-				if (dot_NL >= 0 && dot_NE >= 0) {}
-				else if (dot_NL < 0 && dot_NE < 0) {
-					N = N.Mult(-1);
-					dot_NL = N.DotProduct(L);
-				}
-				else {
-					continue;
-				}
-
-				Vector3 R = (N.Mult(2 * dot_NL)).Subtract(L).Normalize();
-
-				float dot_RE = R.DotProduct(E);
-				if (dot_RE < 0) dot_RE = 0;
-				else if (dot_RE > 1) dot_RE = 1;
-				if (dot_NL < 0) dot_NL = 0;
-				else if (dot_NL > 1) dot_NL = 1;
-
-				for (int j = 0; j < 3; ++j) {
-					illumination.base[j] += lightIntensity * baseColor[j] * aLight.color.base[j] * pow(dot_RE, this->spec);
-					illumination.base[j] += lightIntensity * baseColor[j] * aLight.color.base[j] * dot_NL;
+					if (*intersectIndex == -1) {
+						lightIntensity++;
+					}
+					delete intersectIndex;
+					delete intersect2;
 				}
 			}
-			delete intersectIndex;
-			delete intersect2;
+		}
+
+		Vector3 L = aLight.position.Subtract(*intersection).Normalize();
+		bool calc = true;
+		float dot_NL = N.DotProduct(L);
+		float dot_NE = N.DotProduct(E);
+		if (dot_NL >= 0 && dot_NE >= 0) {}
+		else if (dot_NL < 0 && dot_NE < 0) {
+			N = N.Mult(-1);
+			dot_NL = N.DotProduct(L);
+		}
+		else calc = false;
+		if (calc) {
+			Vector3 R = (N.Mult(2 * dot_NL)).Subtract(L).Normalize();
+
+			float dot_RE = R.DotProduct(E);
+			if (dot_RE < 0) dot_RE = 0;
+			else if (dot_RE > 1) dot_RE = 1;
+			if (dot_NL < 0) dot_NL = 0;
+			else if (dot_NL > 1) dot_NL = 1;
+
+			float intensity = lightIntensity / (pow(aLight.samplePerSide, 3));
+
+			for (int j = 0; j < 3; ++j) {
+				illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * pow(dot_RE, this->spec);
+				illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * dot_NL;
+			}
 		}
 	}
 

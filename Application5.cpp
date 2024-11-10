@@ -129,7 +129,7 @@ GzMatrix	rotateY =
 	GzLight	light2 = { {0, -0.7071, -0.7071}, {0.7, 0.7, 0.7} };
 	//GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.2, 0.7, 0.3} };
 	GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.7, 0.7, 0.7} };
-	GzLight	ambientlight = { {0, 0, 0}, {0.3, 0.3, 0.3} };
+	GzLight	ambientlight = { {0, 0, 0}, {0.1, 0.1, 0.1} };
 
 	/* Material property */
 	GzColor specularCoefficient = { 0.3, 0.3, 0.3 };
