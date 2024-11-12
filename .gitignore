@@ -434,3 +434,5 @@ FodyWeavers.xsd
 
 *.db
 *.ipch
+*.ppm
+output.ppm
