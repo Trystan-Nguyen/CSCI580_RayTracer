@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "MathUtil.h"
 
-
 Vector4::Vector4(float x, float y, float z) 
 {
 	base[0] = x;
@@ -241,4 +240,8 @@ bool positionInTriangle(Vector3* triangleCoords, Vector3 position) {
 	float triArea = ((triangleCoords[1].Subtract(triangleCoords[0])).Crossproduct((triangleCoords[2].Subtract(triangleCoords[0])))).Length();
 
 	return fabs(triArea - total_weight) < 0.001;
+}
+
+Vector3 sample_square() {
+	return Vector3(random_double() - 0.5, random_double() - 0.5, 0);
 }

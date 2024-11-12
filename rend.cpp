@@ -574,34 +574,40 @@ void GzRender::RayTrace()
 	for (int x = 0; x < xres; ++x) {
 		for (int y = 0; y < yres; ++y) {
 			// TODO - Antialiasing by rays
+			Vector3 color = Vector3(0, 0, 0);
+			bool intersected = false;
+			for (int sample = 0; sample < SAMPLES_PER_PIXEL; sample++) {
+				auto offset = sample_square(); // a vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+				// Center of pixel + offset
+				float cx = float(2 * x + 1 + offset.base[0]) / (2 * xres);
+				float cy = float(2 * y + 1 + offset.base[1]) / (2 * yres);
+				// Ray Direction
+				Vector3 ray = Vector3(
+					(1.0 - cx) * left + cx * right,
+					cy * bot + (1.0 - cy) * top,
+					1
+				).Normalize();
 
-			// Center of pixel
-			float cx = float(2 * x + 1) / (2 * xres);
-			float cy = float(2 * y + 1) / (2 * yres);
+				int* triIndex = new int();
+				*triIndex = -1;
+				Vector3* intersectPos = new Vector3(0, 0, 0);
+				RayCast(origin, ray, triIndex, intersectPos);
 
-			// Ray Direction
-			Vector3 ray = Vector3(
-				(1.0 - cx) * left + cx * right,
-				cy * bot + (1.0 - cy) * top,
-				1
-			).Normalize();
+				if (*triIndex != -1) {
+					for (int i = 0; i < 3; i++) {
+						color.base[i] += ComputeShading(*triIndex, intersectPos).base[i] / SAMPLES_PER_PIXEL;
+						intersected = true;
+					}
+				}
 
-			int* triIndex = new int();
-			*triIndex = -1;
-			Vector3* intersectPos = new Vector3(0, 0, 0);
-			RayCast(origin, ray, triIndex, intersectPos);
-
-			if (*triIndex != -1) {
-				Vector3 color = ComputeShading(*triIndex, intersectPos);
-				GzPut(x, y, color.base[0], color.base[1], color.base[2], 1, 1);
+				delete intersectPos;
+				delete triIndex;
 			}
-
-			delete intersectPos;
-			delete triIndex;
+			if (intersected)
+				GzPut(x, y, color.base[0], color.base[1], color.base[2], 1, 1);
 		}
 	}
 }
-
 
 void GzRender::RayCast(Vector3 origin, Vector3 direction, int* triangleIndex, Vector3* position) {
 	float dist = MAXINT;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include	"Gz.h"
+#include <cstdlib>
 
 class Vector3
 {
@@ -15,6 +16,13 @@ public:
 	float DotProduct(Vector3 v2);
 	Vector3 Normalize();
 	float Length();
+
+	Vector3& operator+=(const Vector3& v) {
+		base[0] += v.base[0];
+		base[1] += v.base[1];
+		base[2] += v.base[2];
+		return *this;
+	}
 };
 
 class Vector4
@@ -130,4 +138,9 @@ public:
 float intersection(Vector3 rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 planeNormal, Vector3* intersection, bool test = false);
 bool positionInTriangle(Vector3* triangleCoords, Vector3 position);
 
+inline double random_double() {
+	// Returns a random real in [0,1).
+	return std::rand() / (RAND_MAX + 1.0);
+}
 
+Vector3 sample_square();
