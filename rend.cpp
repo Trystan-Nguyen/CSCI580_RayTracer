@@ -137,6 +137,7 @@ GzRender::GzRender(int xRes, int yRes)
 
 	numTriangles = 0;
 	triangleList = new Triangle[MAX_TRIANGLES]();
+	extendedtriangleList = new Triangle[MAX_TRIANGLES]();
 }
 
 GzRender::~GzRender()
@@ -543,13 +544,31 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 		tri.SetNorms(i, transformedNorms[i]);
 		tri.SetUV(i, UVCoords[i]);
 	}
+
 	// TODO - Material specific parameters
 	//tri.SetKa(this->Ka[0], this->Ka[1], this->Ka[2]);
 	//tri.SetKd(this->Kd[0], this->Kd[1], this->Kd[2]);
 	//tri.SetKs(this->Ks[0], this->Ks[1], this->Ks[2]);
 	//tri.SetSpec(this->spec);
 
-	triangleList[numTriangles++] = tri;
+	triangleList[numTriangles] = tri;
+
+
+	Triangle extendedTri = Triangle();
+	for (int i = 0; i < 3; ++i){
+		int a = i, b = (i + 1) % 3, c = (i + 2) % 3;
+		// Penumbra Size ?? TEST
+		Vector3 v1 = transformedCoords[a].Subtract(transformedCoords[b]);
+		Vector3 v2 = transformedCoords[a].Subtract(transformedCoords[c]);
+		Vector3 v3 = v1.Add(v2).Mult(0.25);
+
+		Vector3 p = transformedCoords[a].Add(v3);
+		extendedTri.SetPositions(i, p);
+		extendedTri.SetNorms(i, transformedCoords[a]);
+
+		//tri.SetPositions(i, p);
+	}
+	extendedtriangleList[numTriangles++] = extendedTri;
 
 	return GZ_SUCCESS;
 }
@@ -590,7 +609,7 @@ void configureObject(GzRender* self) {
 	self->numlights = 0;
 
 	useAreaLight = true;
-	aLight.color = Vector3(1.0, 1.0, 1.0);
+	aLight.color = Vector3(.7, .7, .7);
 	aLight.position = Vector3(12.875, 100, 142.225);
 	aLight.sideLength = 80;
 	aLight.samplePerSide = 10;
@@ -673,6 +692,47 @@ void GzRender::RayCast(Vector3* origin, Vector3 direction, int* triangleIndex, V
 	}
 }
 
+float GzRender::SingleShadowCast(Vector3* origin, Vector3 direction, int* triangleIndex, Vector3* position, int ignoreIndex) {
+	float dist = 1.0;
+	for (int i = 0; i < numTriangles; ++i)
+	{
+		if (i == ignoreIndex) continue;
+		Triangle current = extendedtriangleList[i];
+		Vector3 normal = (current.GetPosition(1).Subtract(current.GetPosition(0)).Crossproduct(current.GetPosition(2).Subtract(current.GetPosition(0)))).Normalize();
+		Vector3 p = Vector3(0, 0, 0);
+
+		float currentMag = intersection(origin, direction, current.GetPosition(0), normal, &p);
+		Vector3 triangleCoords[] = {
+			current.GetPosition(0),
+			current.GetPosition(1),
+			current.GetPosition(2)
+		};
+		bool inTriangle = positionInTriangle(triangleCoords, p);
+
+		if (inTriangle && currentMag != -1 && currentMag > 0.01) {
+			int indexClosest = 0;
+			float mag = p.Subtract(current.GetPosition(0)).Length();
+			for (int j = 0; j < 3; ++j) {
+				float d = p.Subtract(current.GetPosition(j)).Length();
+				if (d < mag) {
+					mag = d;
+					indexClosest = j;
+				}
+			}
+
+			Vector3 InnerToOut = current.GetPosition(indexClosest).Subtract(current.GetNorms(indexClosest));
+			float totalWeight = InnerToOut.Length();
+			InnerToOut = InnerToOut.Normalize();
+			Vector3 ToPoint = p.Subtract(current.GetNorms(indexClosest));
+
+			float w = (ToPoint.DotProduct(InnerToOut) / totalWeight);
+			if (w < dist) dist = w;
+		}
+	}
+
+	return dist;
+}
+
 Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 EyeRay) {
 	Triangle tri = this->triangleList[triIndex];
 	Vector3 coordData[] = { tri.GetPosition(0), tri.GetPosition(1) , tri.GetPosition(2) };
@@ -696,7 +756,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 
 	Vector3 illumination(0, 0, 0);
 	for (int i = 0; i < 3; ++i) {
-		illumination.base[i] = baseColor[i] * this->ambientlight.color[i];
+		//illumination.base[i] = baseColor[i] * this->ambientlight.color[i];
 	}
 
 	// TODO - Reflection
@@ -742,60 +802,49 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 
 	// SOFT SHADOW
 	{
-		float lightIntensity = 0;
-		for (int x = 0; x < aLight.samplePerSide; ++x) {
-			for (int y = 0; y < aLight.samplePerSide; ++y) {
-				for (int z = 0; z < aLight.samplePerSide; ++z) {
-					float offsetX = aLight.sideLength * (x / aLight.samplePerSide) - (aLight.sideLength / 2);
-					float offsetY = aLight.sideLength * (y / aLight.samplePerSide) - (aLight.sideLength / 2);
-					float offsetZ = aLight.sideLength * (z / aLight.samplePerSide) - (aLight.sideLength / 2);
-					Vector3 lightPosition = Vector3(aLight.position.base[0] + offsetX, aLight.position.base[1] + offsetY, aLight.position.base[2] + offsetZ);
-					Vector3 L = lightPosition.Subtract(*intersection).Normalize();
-					int* intersectIndex = new int();
-					*intersectIndex = -1;
-					Vector3* intersect2 = new Vector3(0, 0, 0);
-					RayCast(intersection, L, intersectIndex, intersect2, triIndex);
+		Vector3 L = aLight.position.Subtract(*intersection).Normalize();
 
-					if (*intersectIndex == -1) {
-						lightIntensity++;
-					}
-					delete intersectIndex;
-					delete intersect2;
+		int* intersectIndex = new int();
+		*intersectIndex = -1;
+		Vector3* intersect2 = new Vector3(0, 0, 0);
+		RayCast(intersection, L, intersectIndex, intersect2, triIndex);
+		if (*intersectIndex == -1) {
+			float w = SingleShadowCast(intersection, L, NULL, NULL);
+
+			float dot_NL = N.DotProduct(L);
+			float dot_NE = N.DotProduct(E);
+			bool calc = true;
+			if (dot_NL >= 0 && dot_NE >= 0) {}
+			else if (dot_NL < 0 && dot_NE < 0) {
+				N = N.Mult(-1);
+				dot_NL = N.DotProduct(L);
+			}
+			else {
+				calc = false;
+			}
+			if (calc) {
+				Vector3 R = (N.Mult(2 * dot_NL)).Subtract(L).Normalize();
+
+				float dot_RE = R.DotProduct(E);
+				if (dot_RE < 0) dot_RE = 0;
+				else if (dot_RE > 1) dot_RE = 1;
+				if (dot_NL < 0) dot_NL = 0;
+				else if (dot_NL > 1) dot_NL = 1;
+				for (int i = 0; i < 3; ++i) {
+					//illumination.base[i] += w * baseColor[i] * aLight.color.base[i] * pow(dot_RE, this->spec);
+					illumination.base[i] += w * baseColor[i] * aLight.color.base[i] * dot_NL;
 				}
 			}
 		}
 
-		Vector3 L = aLight.position.Subtract(*intersection).Normalize();
-		bool calc = true;
-		float dot_NL = N.DotProduct(L);
-		float dot_NE = N.DotProduct(E);
-		if (dot_NL >= 0 && dot_NE >= 0) {}
-		else if (dot_NL < 0 && dot_NE < 0) {
-			N = N.Mult(-1);
-			dot_NL = N.DotProduct(L);
-		}
-		else calc = false;
-		if (calc) {
-			Vector3 R = (N.Mult(2 * dot_NL)).Subtract(L).Normalize();
-
-			float dot_RE = R.DotProduct(E);
-			if (dot_RE < 0) dot_RE = 0;
-			else if (dot_RE > 1) dot_RE = 1;
-			if (dot_NL < 0) dot_NL = 0;
-			else if (dot_NL > 1) dot_NL = 1;
-
-			float intensity = lightIntensity / (pow(aLight.samplePerSide, 3));
-
-			for (int j = 0; j < 3; ++j) {
-				illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * pow(dot_RE, this->spec);
-				illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * dot_NL;
-			}
-		}
+		delete intersectIndex;
+		delete intersect2;
 	}
 
 	Vector3 color(0, 0, 0);
 	for (int i = 0; i < 3; ++i) {
 		color.base[i] = this->ctoi(illumination.base[i]);
+		//color.base[i] = this->ctoi(baseColor[i]);
 	}
 	return color;
 }

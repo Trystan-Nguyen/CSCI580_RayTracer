@@ -82,12 +82,15 @@ public:
 
 	bool doRayTrace = true;
 	Triangle* triangleList;
+
 	int numTriangles;
 
 	void GzRender::RayTrace();
 	void GzRender::RayCast(Vector3* origin, Vector3 direction, int* triangleIndex, Vector3* position, int ignoreIndex = -1);
-	
 	Vector3 ComputeShading(int triIndex, Vector3* intersection, Vector3 E);
+
+	Triangle* extendedtriangleList;
+	float GzRender::SingleShadowCast(Vector3* origin, Vector3 direction, int* triangleIndex, Vector3* position, int ignoreIndex = -1);
 
 };
 #endif
