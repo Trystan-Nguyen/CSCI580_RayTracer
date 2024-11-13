@@ -594,12 +594,15 @@ void GzRender::RayTrace()
 				RayCast(origin, ray, triIndex, intersectPos);
 
 				if (*triIndex != -1) {
-					for (int i = 0; i < 3; i++) {
+					for (int i = 0; i < 3; i++) 
 						color.base[i] += ComputeShading(*triIndex, intersectPos).base[i] / SAMPLES_PER_PIXEL;
 						intersected = true;
-					}
 				}
-
+				else {
+					color.base[0] += 2055 / SAMPLES_PER_PIXEL;
+					color.base[1] += 1798 / SAMPLES_PER_PIXEL;
+					color.base[2] += 1541 / SAMPLES_PER_PIXEL;
+				}
 				delete intersectPos;
 				delete triIndex;
 			}
