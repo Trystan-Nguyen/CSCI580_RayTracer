@@ -575,7 +575,6 @@ void GzRender::RayTrace()
 		for (int y = 0; y < yres; ++y) {
 			// TODO - Antialiasing by rays
 			Vector3 color = Vector3(0, 0, 0);
-			bool intersected = false;
 			for (int sample = 0; sample < SAMPLES_PER_PIXEL; sample++) {
 				auto offset = sample_square(); // a vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
 				// Center of pixel + offset
@@ -596,7 +595,6 @@ void GzRender::RayTrace()
 				if (*triIndex != -1) {
 					for (int i = 0; i < 3; i++) 
 						color.base[i] += ComputeShading(*triIndex, intersectPos).base[i] / SAMPLES_PER_PIXEL;
-						intersected = true;
 				}
 				else {
 					color.base[0] += 2055 / SAMPLES_PER_PIXEL;
@@ -606,8 +604,7 @@ void GzRender::RayTrace()
 				delete intersectPos;
 				delete triIndex;
 			}
-			if (intersected)
-				GzPut(x, y, color.base[0], color.base[1], color.base[2], 1, 1);
+			GzPut(x, y, color.base[0], color.base[1], color.base[2], 1, 1);
 		}
 	}
 }
