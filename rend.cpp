@@ -553,23 +553,39 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 
 	triangleList[numTriangles] = tri;
 
-
 	Triangle extendedTri = Triangle();
+
+	Vector3 origin = transformedCoords[0].Add(transformedCoords[1]).Mult(0.5);
+	float hyp = transformedCoords[0].Subtract(transformedCoords[1]).Length();
+	for (int i = 0; i < 3; ++i) {
+		Vector3 posA = transformedCoords[i];
+		Vector3 posB = transformedCoords[(i + 1) % 3];
+		float dist = posA.Subtract(posB).Length();
+		if (hyp < dist) {
+			hyp = dist;
+			origin = posA.Add(posB).Mult(0.5);
+		}
+	}
+
 	for (int i = 0; i < 3; ++i){
+		/*
 		int a = i, b = (i + 1) % 3, c = (i + 2) % 3;
 		// Penumbra Size ?? TEST
 		Vector3 v1 = transformedCoords[a].Subtract(transformedCoords[b]);
 		Vector3 v2 = transformedCoords[a].Subtract(transformedCoords[c]);
-		Vector3 v3 = v1.Add(v2).Mult(0.25);
+		Vector3 v3 = v1.Add(v2).Mult(0.15);
 
 		Vector3 p = transformedCoords[a].Add(v3);
+		*/
+		Vector3 p = transformedCoords[i].Subtract(origin).Mult(1.15).Add(origin);
 		extendedTri.SetPositions(i, p);
-		extendedTri.SetNorms(i, transformedCoords[a]);
+		//extendedTri.SetNorms(i, transformedCoords[a]);
+		extendedTri.SetNorms(i, transformedCoords[i]);
 
 		//tri.SetPositions(i, p);
 	}
 	extendedtriangleList[numTriangles++] = extendedTri;
-
+	
 	return GZ_SUCCESS;
 }
 
@@ -693,7 +709,8 @@ void GzRender::RayCast(Vector3* origin, Vector3 direction, int* triangleIndex, V
 }
 
 float GzRender::SingleShadowCast(Vector3* origin, Vector3 direction, int* triangleIndex, Vector3* position, int ignoreIndex) {
-	float dist = 1.0;
+	float weight = 1.0;
+	
 	for (int i = 0; i < numTriangles; ++i)
 	{
 		if (i == ignoreIndex) continue;
@@ -710,27 +727,31 @@ float GzRender::SingleShadowCast(Vector3* origin, Vector3 direction, int* triang
 		bool inTriangle = positionInTriangle(triangleCoords, p);
 
 		if (inTriangle && currentMag != -1 && currentMag > 0.01) {
-			int indexClosest = 0;
-			float mag = p.Subtract(current.GetPosition(0)).Length();
-			for (int j = 0; j < 3; ++j) {
-				float d = p.Subtract(current.GetPosition(j)).Length();
-				if (d < mag) {
-					mag = d;
-					indexClosest = j;
-				}
+			int indexA = 0, indexB = 1;
+			float lengthA = p.Subtract(current.GetPosition(0)).Length(), lengthB = p.Subtract(current.GetPosition(1)).Length();
+
+			float lengthC = p.Subtract(current.GetPosition(2)).Length();
+			if (lengthC < lengthA && lengthC < lengthB) {
+				if (lengthA > lengthB) indexA = 2;
+				else indexB = 2;
 			}
+			else if (lengthC < lengthA) indexA = 2;
+			else if (lengthC < lengthB) indexB = 2;
 
-			Vector3 InnerToOut = current.GetPosition(indexClosest).Subtract(current.GetNorms(indexClosest));
-			float totalWeight = InnerToOut.Length();
-			InnerToOut = InnerToOut.Normalize();
-			Vector3 ToPoint = p.Subtract(current.GetNorms(indexClosest));
+			Vector3 vecInner = current.GetNorms(indexA).Subtract(current.GetNorms(indexB)).Normalize();
+			Vector3 vecInnerIntersect = p.Subtract(current.GetNorms(indexB));
+			float weightOuter = sqrtf(pow(vecInnerIntersect.Length(), 2) - pow(vecInner.DotProduct(vecInnerIntersect), 2));
 
-			float w = (ToPoint.DotProduct(InnerToOut) / totalWeight);
-			if (w < dist) dist = w;
+			Vector3 vecOuter = current.GetPosition(indexA).Subtract(current.GetPosition(indexB)).Normalize();
+			Vector3 vecOuterIntersect = p.Subtract(current.GetPosition(indexB));
+			float weightInner = sqrtf(pow(vecOuterIntersect.Length(), 2) - pow(vecOuter.DotProduct(vecOuterIntersect), 2));
+
+			float w = weightOuter / (weightOuter + weightInner);
+			if (w < weight) weight = w;
 		}
 	}
 
-	return dist;
+	return weight;
 }
 
 Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 EyeRay) {
