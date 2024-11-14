@@ -458,6 +458,9 @@ int GzRender::GzPutAttribute(int numAttributes, GzToken	*nameList, GzPointer *va
 //-----------------------------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------------------------------------
+Vector3 sumPos = Vector3(0,0,0);
+int numPos = 0;
+
 
 int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueList)
 /* numParts - how many names and values */
@@ -542,6 +545,9 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 		tri.SetPositions(i, transformedCoords[i]);
 		tri.SetNorms(i, transformedNorms[i]);
 		tri.SetUV(i, UVCoords[i]);
+
+		sumPos = sumPos.Add(transformedCoords[i]);
+		numPos++;
 	}
 	// TODO - Material specific parameters
 	//tri.SetKa(this->Ka[0], this->Ka[1], this->Ka[2]);
@@ -571,12 +577,12 @@ void configureObject(GzRender* self) {
 	for (int i = 0; i < 2; ++i)
 	{
 		self->triangleList[i].useTexture = false;
-		self->triangleList[i].SetKd(0.828125, 0.78515625, 0.7109375);
+		self->triangleList[i].SetKd(0.8, 0.8, 0.8);
 	}
-	for (int i = 2; i < 4; ++i)
+	for (int i = 2; i < self->numTriangles; ++i)
 	{
 		self->triangleList[i].useTexture = false;
-		self->triangleList[i].SetKd(0.8, 0.8, 0.8);
+		self->triangleList[i].SetKd(0.828125, 0.78515625, 0.7109375);
 	}
 	/*
 	self->numlights = 1;
@@ -590,10 +596,14 @@ void configureObject(GzRender* self) {
 	self->numlights = 0;
 
 	useAreaLight = true;
-	aLight.color = Vector3(1.0, 1.0, 1.0);
-	aLight.position = Vector3(12.875, 100, 142.225);
+	aLight.color = Vector3(0.7, 0.7, 0.7);
+	aLight.position = Vector3(-20, 80, -160);
 	aLight.sideLength = 80;
-	aLight.samplePerSide = 10;
+	aLight.samplePerSide = 4;
+
+
+	Vector3 avg = sumPos.Mult(1.0 / numPos);
+	printf("");
 }
 
 
@@ -742,6 +752,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 
 	// SOFT SHADOW
 	{
+		//**
 		float lightIntensity = 0;
 		for (int x = 0; x < aLight.samplePerSide; ++x) {
 			for (int y = 0; y < aLight.samplePerSide; ++y) {
@@ -764,7 +775,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 				}
 			}
 		}
-
+		//*/
 		Vector3 L = aLight.position.Subtract(*intersection).Normalize();
 		bool calc = true;
 		float dot_NL = N.DotProduct(L);
@@ -775,6 +786,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 			dot_NL = N.DotProduct(L);
 		}
 		else calc = false;
+
 		if (calc) {
 			Vector3 R = (N.Mult(2 * dot_NL)).Subtract(L).Normalize();
 
@@ -785,9 +797,8 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 			else if (dot_NL > 1) dot_NL = 1;
 
 			float intensity = lightIntensity / (pow(aLight.samplePerSide, 3));
-
 			for (int j = 0; j < 3; ++j) {
-				illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * pow(dot_RE, this->spec);
+				//illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * pow(dot_RE, this->spec);
 				illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * dot_NL;
 			}
 		}

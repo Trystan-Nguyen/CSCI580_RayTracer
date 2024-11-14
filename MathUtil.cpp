@@ -240,5 +240,5 @@ bool positionInTriangle(Vector3* triangleCoords, Vector3 position) {
 
 	float triArea = ((triangleCoords[1].Subtract(triangleCoords[0])).Crossproduct((triangleCoords[2].Subtract(triangleCoords[0])))).Length();
 
-	return fabs(triArea - total_weight) < 0.1;
+	return fabs(triArea - total_weight) < 0.008;
 }

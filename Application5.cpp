@@ -21,7 +21,8 @@ static char THIS_FILE[]=__FILE__;
 //#define INFILE  "tri.asc"
 //#define INFILE  "partialPot.asc"
 //#define INFILE  "ppot.asc"
-#define INFILE  "ShadowEx.asc"
+//#define INFILE  "ShadowEx.asc"
+#define INFILE  "ShadowDemo.asc"
 #define OUTFILE "output.ppm"
 
 
