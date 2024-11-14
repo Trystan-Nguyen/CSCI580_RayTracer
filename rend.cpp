@@ -5,6 +5,7 @@
 #include	"math.h"
 #include	"Gz.h"
 #include	"rend.h"
+#include <cstdlib>
 
 #define PI (float) 3.14159265358979323846
 bool pushIdentityNorm = false;
@@ -619,7 +620,7 @@ void GzRender::RayCast(Vector3 origin, Vector3 direction, int* triangleIndex, Ve
 		};
 		bool inTriangle = positionInTriangle(triangleCoords, p);
 
-		if (inTriangle && currentMag != -1 && currentMag < dist && currentMag > 0.01) {
+		if (inTriangle && currentMag != -1 && currentMag < dist && currentMag > 0.001) {
 			for (int j = 0; j < 3; ++j) {
 				position->base[j] = p.base[j];
 			}
@@ -658,12 +659,30 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 	// Recalculate reflective vector
 	Vector3 relectionColor = { 0,0,0 };
 	if (depth > 1) {
-		Vector3 reflection = (N.Mult(2 * N.DotProduct(ray))).Subtract(ray).Normalize();
+		/*RdotN = dotProduct(normal_, ray.direction);
+		if (RdotN > 0) {
+			for (int i = 0; i < 3; ++i)
+				normal[i] *= -1;
+
+		}
+		new_dir.x = ray.direction.x - (2 * abs(RdotN) * normal[X]);
+		new_dir.y = ray.direction.y - (2 * abs(RdotN) * normal[Y]);
+		new_dir.z = ray.direction.z - (2 * abs(RdotN) * normal[Z]);
+		ray.Normalize(new_dir);*/
+		float dot_RN = N.DotProduct(ray);
+		if (dot_RN > 0) {
+			for (int i = 0; i < 3; ++i)
+				N = N.Mult(-1);
+				dot_RN = N.DotProduct(ray);
+
+		}
+		Vector3 reflection = ray.Subtract(N.Mult(2 * dot_RN)).Normalize();
 		int* intersectIndex = new int();
 		*intersectIndex = -1;
 		Vector3* intersect2 = new Vector3(0, 0, 0);
 		RayCast(*intersection, reflection, intersectIndex, intersect2);
 		if (*intersectIndex != -1) {
+			return Vector3(0, 0, 0);
 			relectionColor = ComputeShading(*intersectIndex, intersect2, reflection, depth - 1);
 		}
 		delete intersectIndex;
@@ -704,7 +723,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 
 	Vector3 color(0, 0, 0);
 	for (int i = 0; i < 3; ++i) {
-		color.base[i] = this->ctoi(illumination.base[i] + baseColor[i] * relectionColor.base[i]);
+		color.base[i] = this->ctoi(illumination.base[i]);
 	}
 	return color;
 }

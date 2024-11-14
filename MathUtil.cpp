@@ -232,13 +232,28 @@ float intersection(Vector3 rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 
 }
 
 bool positionInTriangle(Vector3* triangleCoords, Vector3 position) {
-	float a_weight = ((triangleCoords[1].Subtract(position)).Crossproduct((triangleCoords[2].Subtract(position)))).Length();
-	float b_weight = ((triangleCoords[0].Subtract(position)).Crossproduct((triangleCoords[2].Subtract(position)))).Length();
-	float c_weight = ((triangleCoords[0].Subtract(position)).Crossproduct((triangleCoords[1].Subtract(position)))).Length();
+	// Vectors from the point to the vertices of the triangle
+	Vector3 v0 = triangleCoords[1].Subtract(triangleCoords[0]);
+	Vector3 v1 = triangleCoords[2].Subtract(triangleCoords[1]);
+	Vector3 v2 = triangleCoords[0].Subtract(triangleCoords[2]);
 
-	float total_weight = a_weight + b_weight + c_weight;
+	Vector3 p0 = position.Subtract(triangleCoords[0]);
+	Vector3 p1 = position.Subtract(triangleCoords[1]);
+	Vector3 p2 = position.Subtract(triangleCoords[2]);
 
-	float triArea = ((triangleCoords[1].Subtract(triangleCoords[0])).Crossproduct((triangleCoords[2].Subtract(triangleCoords[0])))).Length();
+	// Cross products
+	Vector3 cross0 = v0.Crossproduct(p0);
+	Vector3 cross1 = v1.Crossproduct(p1);
+	Vector3 cross2 = v2.Crossproduct(p2);
 
-	return fabs(triArea - total_weight) < 0.001;
+	float a_weight = cross0.DotProduct(cross1);
+	float b_weight = cross1.DotProduct(cross2);
+	float c_weight = cross2.DotProduct(cross0);
+
+	// Check if the cross products have the same direction
+	if (cross0.DotProduct(cross1) >= 0 && cross1.DotProduct(cross2) >= 0 && cross2.DotProduct(cross0) >= 0) {
+		return true;
+	}
+
+	return false;
 }
