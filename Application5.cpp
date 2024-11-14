@@ -19,8 +19,8 @@ static char THIS_FILE[]=__FILE__;
 #endif
 
 //#define INFILE  "tri.asc"
-//#define INFILE  "partialPot.asc"
-//#define INFILE  "ppot.asc"
+#define INFILE  "partialPot.asc"
+#define INFILE  "ppot.asc"
 #define INFILE  "ShadowEx.asc"
 #define OUTFILE "output.ppm"
 
@@ -123,9 +123,12 @@ GzMatrix	rotateY =
 	status |= m_pRender->GzBeginRender();
 
 	/* Light */
-	GzLight	light1 = { {-0.7071, 0.7071, 0}, {0.5, 0.5, 0.9} };
-	GzLight	light2 = { {0, -0.7071, -0.7071}, {0.9, 0.2, 0.3} };
-	GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.2, 0.7, 0.3} };
+	//GzLight	light1 = { {-0.7071, 0.7071, 0}, {0.5, 0.5, 0.9} };
+	GzLight	light1 = { {-0.7071, 0.7071, 0}, {0.7, 0.7, 0.7} };
+	//GzLight	light2 = { {0, -0.7071, -0.7071}, {0.9, 0.2, 0.3} };
+	GzLight	light2 = { {0, -0.7071, -0.7071}, {0.7, 0.7, 0.7} };
+	//GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.2, 0.7, 0.3} };
+	GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.7, 0.7, 0.7} };
 	GzLight	ambientlight = { {0, 0, 0}, {0.3, 0.3, 0.3} };
 
 	/* Material property */

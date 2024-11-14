@@ -246,10 +246,6 @@ bool positionInTriangle(Vector3* triangleCoords, Vector3 position) {
 	Vector3 cross1 = v1.Crossproduct(p1);
 	Vector3 cross2 = v2.Crossproduct(p2);
 
-	float a_weight = cross0.DotProduct(cross1);
-	float b_weight = cross1.DotProduct(cross2);
-	float c_weight = cross2.DotProduct(cross0);
-
 	// Check if the cross products have the same direction
 	if (cross0.DotProduct(cross1) >= 0 && cross1.DotProduct(cross2) >= 0 && cross2.DotProduct(cross0) >= 0) {
 		return true;
