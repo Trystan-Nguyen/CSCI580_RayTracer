@@ -87,7 +87,7 @@ public:
 	void GzRender::RayTrace();
 	void GzRender::RayCast(Vector3 origin, Vector3 direction, int* triangleIndex, Vector3* position);
 	
-	Vector3 ComputeShading(int triIndex, Vector3* intersection);
+	Vector3 ComputeShading(int triIndex, Vector3* intersection, Vector3 ray, int depth);
 
 };
 #endif

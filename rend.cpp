@@ -592,7 +592,7 @@ void GzRender::RayTrace()
 			RayCast(origin, ray, triIndex, intersectPos);
 
 			if (*triIndex != -1) {
-				Vector3 color = ComputeShading(*triIndex, intersectPos);
+				Vector3 color = ComputeShading(*triIndex, intersectPos, ray, 2);
 				GzPut(x, y, color.base[0], color.base[1], color.base[2], 1, 1);
 			}
 
@@ -619,7 +619,7 @@ void GzRender::RayCast(Vector3 origin, Vector3 direction, int* triangleIndex, Ve
 		};
 		bool inTriangle = positionInTriangle(triangleCoords, p);
 
-		if (inTriangle && currentMag != -1 && currentMag < dist) {
+		if (inTriangle && currentMag != -1 && currentMag < dist && currentMag > 0.01) {
 			for (int j = 0; j < 3; ++j) {
 				position->base[j] = p.base[j];
 			}
@@ -629,7 +629,7 @@ void GzRender::RayCast(Vector3 origin, Vector3 direction, int* triangleIndex, Ve
 	}
 }
 
-Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
+Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ray, int depth) {
 	Triangle tri = this->triangleList[triIndex];
 	Vector3 coordData[] = { tri.GetPosition(0), tri.GetPosition(1) , tri.GetPosition(2) };
 	Vector3 normData[] = { tri.GetNorms(0), tri.GetNorms(1) , tri.GetNorms(2) };
@@ -656,6 +656,19 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
 
 	// TODO - Reflection
 	// Recalculate reflective vector
+	Vector3 relectionColor = { 0,0,0 };
+	if (depth > 1) {
+		Vector3 reflection = (N.Mult(2 * N.DotProduct(ray))).Subtract(ray).Normalize();
+		int* intersectIndex = new int();
+		*intersectIndex = -1;
+		Vector3* intersect2 = new Vector3(0, 0, 0);
+		RayCast(*intersection, reflection, intersectIndex, intersect2);
+		if (*intersectIndex != -1) {
+			relectionColor = ComputeShading(*intersectIndex, intersect2, reflection, depth - 1);
+		}
+		delete intersectIndex;
+		delete intersect2;
+	}
 
 	for (int j = 0; j < this->numlights; ++j) {
 		Vector3 L = Vector3(this->lights[j].direction[0], this->lights[j].direction[1], this->lights[j].direction[2]);
@@ -682,7 +695,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
 
 		// TODO - HARD SHADOW
 		for (int i = 0; i < 3; ++i) {
-			illumination.base[i] += baseColor[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
+			//illumination.base[i] += baseColor[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
 			illumination.base[i] += baseColor[i] * this->lights[j].color[i] * dot_NL;
 		}
 	}
@@ -691,7 +704,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection) {
 
 	Vector3 color(0, 0, 0);
 	for (int i = 0; i < 3; ++i) {
-		color.base[i] = this->ctoi(illumination.base[i]);
+		color.base[i] = this->ctoi(illumination.base[i] + baseColor[i] * relectionColor.base[i]);
 	}
 	return color;
 }
