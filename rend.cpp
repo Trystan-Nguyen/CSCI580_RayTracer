@@ -577,7 +577,7 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 
 		Vector3 p = transformedCoords[a].Add(v3);
 		*/
-		Vector3 p = transformedCoords[i].Subtract(origin).Mult(1.15).Add(origin);
+		Vector3 p = transformedCoords[i].Subtract(origin).Mult(1.5).Add(origin);
 		extendedTri.SetPositions(i, p);
 		//extendedTri.SetNorms(i, transformedCoords[a]);
 		extendedTri.SetNorms(i, transformedCoords[i]);
