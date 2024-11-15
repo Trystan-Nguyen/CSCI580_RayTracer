@@ -574,36 +574,61 @@ AreaLight aLight = AreaLight();
 
 // Change based on what you are trying to do
 void configureObject(GzRender* self) {
-	for (int i = 0; i < 2; ++i)
-	{
-		self->triangleList[i].useTexture = false;
-		self->triangleList[i].SetKd(0.8, 0.8, 0.8);
-	}
-	for (int i = 2; i < self->numTriangles; ++i)
+	for (int i = 0; i < self->numTriangles; ++i)
 	{
 		self->triangleList[i].useTexture = false;
 		self->triangleList[i].SetKd(0.828125, 0.78515625, 0.7109375);
 	}
-	/*
-	self->numlights = 1;
-	self->lights[0].color[0] = 0.7;
-	self->lights[0].color[1] = 0.7;
-	self->lights[0].color[2] = 0.7;
-	self->lights[0].direction[0] = 0;
-	self->lights[0].direction[1] = 1;
-	self->lights[0].direction[2] = 0;
-	//*/
+	
+	Vector3 avg = sumPos.Mult(1.0 / numPos);
+	printf("");
+
+
+	Vector3 a = Vector3(-1.03711438, -12.1594515, 32.2999420);
+	Vector3 b = Vector3(-100.924759, 44.0511513, 143.932251);
+	Vector3 c = Vector3(23.7079220, 99.5476532, 227.513214);
+	Vector3 d = Vector3(123.595573, 43.3370552, 115.880905);
+
+	Vector3 v1 = a.Subtract(b).Normalize();
+	Vector3 v2 = c.Subtract(b).Normalize();
+	Vector3 norm = v1.Crossproduct(v2).Normalize();
+
+	float s = 2.5;
+	a = a.Add(norm.Mult(s));
+	b = b.Add(norm.Mult(s));
+	c = c.Add(norm.Mult(s));
+	d = d.Add(norm.Mult(s));
+	Vector3 avgFloor = a.Add(b).Add(c).Add(d).Mult(1.0 / 4.0);
+
+
+	Triangle floor1 = Triangle();
+	floor1.SetPositions(0, a);
+	floor1.SetPositions(1, b);
+	floor1.SetPositions(2, c);
+	floor1.SetKd(0.8, 0.8, 0.8);
+	floor1.useTexture = false;
+
+	Triangle floor2 = Triangle();
+	floor2.SetPositions(0, a);
+	floor2.SetPositions(1, d);
+	floor2.SetPositions(2, c);
+	floor2.SetKd(0.8, 0.8, 0.8);
+	floor2.useTexture = false;
+
+	for (int i = 0; i < 3; ++i) {
+		floor1.SetNorms(i, norm);
+		floor2.SetNorms(i, norm);
+	}
+	self->triangleList[(self->numTriangles)++] = floor1;
+	self->triangleList[(self->numTriangles)++] = floor2;
+
 	self->numlights = 0;
 
 	useAreaLight = true;
 	aLight.color = Vector3(0.7, 0.7, 0.7);
-	aLight.position = Vector3(-20, 80, -160);
-	aLight.sideLength = 80;
-	aLight.samplePerSide = 4;
-
-
-	Vector3 avg = sumPos.Mult(1.0 / numPos);
-	printf("");
+	aLight.position = Vector3(-80, -40, -250);
+	aLight.sideLength = 25;
+	aLight.samplePerSide = 5;
 }
 
 
@@ -787,6 +812,12 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 		}
 		else calc = false;
 
+		//int* intersectIndex = new int();
+		//*intersectIndex = -1;
+		//Vector3* intersect2 = new Vector3(0, 0, 0);
+		//RayCast(intersection, L, intersectIndex, intersect2, triIndex);
+
+		//if (calc && *intersectIndex == -1) {
 		if (calc) {
 			Vector3 R = (N.Mult(2 * dot_NL)).Subtract(L).Normalize();
 
@@ -797,11 +828,15 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 			else if (dot_NL > 1) dot_NL = 1;
 
 			float intensity = lightIntensity / (pow(aLight.samplePerSide, 3));
+			//float intensity = 1.0;
 			for (int j = 0; j < 3; ++j) {
 				//illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * pow(dot_RE, this->spec);
 				illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * dot_NL;
 			}
 		}
+
+		//delete intersectIndex;
+		//delete intersect2;
 	}
 
 	Vector3 color(0, 0, 0);

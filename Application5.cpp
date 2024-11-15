@@ -80,9 +80,9 @@ int Application5::Initialize()
 /* Translation matrix */
 GzMatrix	scale = 
 { 
-	3.25,	0.0,	0.0,	0.0, 
-	0.0,	3.25,	0.0,	-3.25, 
-	0.0,	0.0,	3.25,	3.5, 
+	4.25,	0.0,	0.0,	0.0, 
+	0.0,	4.25,	0.0,	-3.25, 
+	0.0,	0.0,	4.25,	3.5, 
 	0.0,	0.0,	0.0,	1.0 
 }; 
  
@@ -96,11 +96,19 @@ GzMatrix	rotateX =
  
 GzMatrix	rotateY = 
 { 
-	.866,	0.0,	-0.5,	0.0, 
+	.866,	0.0,	0.5,	0.0, 
 	0.0,	1.0,	0.0,	0.0, 
-	0.5,	0.0,	.866,	0.0, 
+	-0.5,	0.0,	.866,	0.0, 
 	0.0,	0.0,	0.0,	1.0 
 }; 
+
+GzMatrix	rotateZ =
+{
+	cos(3.14159 / 2),	-sin(3.14159 / 2),	0.0,	0.0,
+	sin(3.14159 / 2),	cos(3.14159 / 2),	0.0,	0.0,
+	0.0,	0.0,	1.0,	0.0,
+	0.0,	0.0,	0.0,	1.0
+};
 
 #if 1 	/* set up app-defined camera if desired, else use camera defaults */
     camera.position[X] = -3;
@@ -191,6 +199,7 @@ GzMatrix	rotateY =
 	status |= m_pRender->GzPushMatrix(scale);  
 	status |= m_pRender->GzPushMatrix(rotateY); 
 	status |= m_pRender->GzPushMatrix(rotateX); 
+	status |= m_pRender->GzPushMatrix(rotateZ);
 
 	if (status) exit(GZ_FAILURE); 
 
