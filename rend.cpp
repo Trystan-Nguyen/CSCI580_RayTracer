@@ -12,10 +12,10 @@ bool pushIdentityNorm = false;
 
 int GzRender::GzRotXMat(float degree, GzMatrix mat)
 {
-/* HW 3.1
-// Create rotate matrix : rotate along x axis
-// Pass back the matrix using mat value
-*/
+	/* HW 3.1
+	// Create rotate matrix : rotate along x axis
+	// Pass back the matrix using mat value
+	*/
 
 	MatrixIdentity(mat);
 
@@ -30,10 +30,10 @@ int GzRender::GzRotXMat(float degree, GzMatrix mat)
 
 int GzRender::GzRotYMat(float degree, GzMatrix mat)
 {
-/* HW 3.2
-// Create rotate matrix : rotate along y axis
-// Pass back the matrix using mat value
-*/
+	/* HW 3.2
+	// Create rotate matrix : rotate along y axis
+	// Pass back the matrix using mat value
+	*/
 
 	MatrixIdentity(mat);
 
@@ -48,10 +48,10 @@ int GzRender::GzRotYMat(float degree, GzMatrix mat)
 
 int GzRender::GzRotZMat(float degree, GzMatrix mat)
 {
-/* HW 3.3
-// Create rotate matrix : rotate along z axis
-// Pass back the matrix using mat value
-*/
+	/* HW 3.3
+	// Create rotate matrix : rotate along z axis
+	// Pass back the matrix using mat value
+	*/
 
 	MatrixIdentity(mat);
 
@@ -66,10 +66,10 @@ int GzRender::GzRotZMat(float degree, GzMatrix mat)
 
 int GzRender::GzTrxMat(GzCoord translate, GzMatrix mat)
 {
-/* HW 3.4
-// Create translation matrix
-// Pass back the matrix using mat value
-*/
+	/* HW 3.4
+	// Create translation matrix
+	// Pass back the matrix using mat value
+	*/
 
 	MatrixIdentity(mat);
 
@@ -83,10 +83,10 @@ int GzRender::GzTrxMat(GzCoord translate, GzMatrix mat)
 
 int GzRender::GzScaleMat(GzCoord scale, GzMatrix mat)
 {
-/* HW 3.5
-// Create scaling matrix
-// Pass back the matrix using mat value
-*/
+	/* HW 3.5
+	// Create scaling matrix
+	// Pass back the matrix using mat value
+	*/
 
 	mat[0][0] = scale[0];
 	mat[1][1] = scale[1];
@@ -98,11 +98,11 @@ int GzRender::GzScaleMat(GzCoord scale, GzMatrix mat)
 
 GzRender::GzRender(int xRes, int yRes)
 {
-/* HW1.1 create a framebuffer for MS Windows display:
- -- set display resolution
- -- allocate memory for framebuffer : 3 bytes(b, g, r) x width x height
- -- allocate memory for pixel buffer
- */
+	/* HW1.1 create a framebuffer for MS Windows display:
+	 -- set display resolution
+	 -- allocate memory for framebuffer : 3 bytes(b, g, r) x width x height
+	 -- allocate memory for pixel buffer
+	 */
 	this->xres = xRes;
 	this->yres = yRes;
 
@@ -142,14 +142,14 @@ GzRender::GzRender(int xRes, int yRes)
 
 GzRender::~GzRender()
 {
-/* HW1.2 clean up, free buffer memory */
+	/* HW1.2 clean up, free buffer memory */
 	delete[] pixelbuffer;
 	delete[] framebuffer;
 }
 
 int GzRender::GzDefault()
 {
-/* HW1.3 set pixel buffer to some default values - start a new frame */
+	/* HW1.3 set pixel buffer to some default values - start a new frame */
 
 	for (int i = 0; i < this->xres * this->yres; ++i)
 	{
@@ -165,12 +165,12 @@ int GzRender::GzDefault()
 
 int GzRender::GzBeginRender()
 {
-/* HW 3.7 
-- setup for start of each frame - init frame buffer color,alpha,z
-- compute Xiw and projection xform Xpi from camera definition 
-- init Ximage - put Xsp at base of stack, push on Xpi and Xiw 
-- now stack contains Xsw and app can push model Xforms when needed 
-*/ 
+	/* HW 3.7
+	- setup for start of each frame - init frame buffer color,alpha,z
+	- compute Xiw and projection xform Xpi from camera definition
+	- init Ximage - put Xsp at base of stack, push on Xpi and Xiw
+	- now stack contains Xsw and app can push model Xforms when needed
+	*/
 
 	GzDefault();
 
@@ -213,9 +213,9 @@ int GzRender::GzBeginRender()
 
 int GzRender::GzPutCamera(GzCamera camera)
 {
-/* HW 3.8 
-/*- overwrite renderer camera structure with new camera definition
-*/
+	/* HW 3.8
+	/*- overwrite renderer camera structure with new camera definition
+	*/
 
 	this->m_camera.lookat[0] = camera.lookat[0];
 	this->m_camera.lookat[1] = camera.lookat[1];
@@ -236,11 +236,11 @@ int GzRender::GzPutCamera(GzCamera camera)
 
 int GzRender::GzPushMatrix(GzMatrix	matrix)
 {
-/* HW 3.9 
-- push a matrix onto the Ximage stack
-- check for stack overflow
-*/
-	
+	/* HW 3.9
+	- push a matrix onto the Ximage stack
+	- check for stack overflow
+	*/
+
 	if (matlevel < MATLEVELS - 1) {
 		MatrixMult(Ximage[matlevel], matrix, Ximage[matlevel + 1]);
 		if (pushIdentityNorm) MatrixMult(Xnorm[matlevel], Xnorm[0], Xnorm[matlevel + 1]);
@@ -253,21 +253,21 @@ int GzRender::GzPushMatrix(GzMatrix	matrix)
 
 int GzRender::GzPopMatrix()
 {
-/* HW 3.10
-- pop a matrix off the Ximage stack
-- check for stack underflow
-*/
+	/* HW 3.10
+	- pop a matrix off the Ximage stack
+	- check for stack underflow
+	*/
 
 	if (matlevel > 0)
 		MatrixIdentity(Ximage[matlevel]);
-		MatrixIdentity(Xnorm[matlevel]);
-		--matlevel;
+	MatrixIdentity(Xnorm[matlevel]);
+	--matlevel;
 	return GZ_SUCCESS;
 }
 
 int GzRender::GzPut(int i, int j, GzIntensity r, GzIntensity g, GzIntensity b, GzIntensity a, GzDepth z)
 {
-/* HW1.4 write pixel values into the buffer */
+	/* HW1.4 write pixel values into the buffer */
 
 	if (i < 0 || i >= this->xres)
 	{
@@ -295,9 +295,9 @@ int GzRender::GzPut(int i, int j, GzIntensity r, GzIntensity g, GzIntensity b, G
 }
 
 
-int GzRender::GzGet(int i, int j, GzIntensity *r, GzIntensity *g, GzIntensity *b, GzIntensity *a, GzDepth *z)
+int GzRender::GzGet(int i, int j, GzIntensity* r, GzIntensity* g, GzIntensity* b, GzIntensity* a, GzDepth* z)
 {
-/* HW1.5 retrieve a pixel information from the pixel buffer */
+	/* HW1.5 retrieve a pixel information from the pixel buffer */
 
 	if (i < 0 || i >= this->xres)
 	{
@@ -321,8 +321,8 @@ int GzRender::GzGet(int i, int j, GzIntensity *r, GzIntensity *g, GzIntensity *b
 
 int GzRender::GzFlushDisplay2File(FILE* outfile)
 {
-/* HW1.6 write image to ppm file -- "P6 %d %d 255\r" */
-	
+	/* HW1.6 write image to ppm file -- "P6 %d %d 255\r" */
+
 	if (doRayTrace) {
 		RayTrace();
 		doRayTrace = false;
@@ -341,11 +341,11 @@ int GzRender::GzFlushDisplay2File(FILE* outfile)
 
 int GzRender::GzFlushDisplay2FrameBuffer()
 {
-/* HW1.7 write pixels to framebuffer: 
-	- put the pixels into the frame buffer
-	- CAUTION: when storing the pixels into the frame buffer, the order is blue, green, and red 
-	- NOT red, green, and blue !!!
-*/
+	/* HW1.7 write pixels to framebuffer:
+		- put the pixels into the frame buffer
+		- CAUTION: when storing the pixels into the frame buffer, the order is blue, green, and red
+		- NOT red, green, and blue !!!
+	*/
 	if (doRayTrace) {
 		RayTrace();
 		doRayTrace = false;
@@ -365,12 +365,12 @@ int GzRender::GzFlushDisplay2FrameBuffer()
 /***********************************************/
 /* HW2 methods: implement from here */
 
-int GzRender::GzPutAttribute(int numAttributes, GzToken	*nameList, GzPointer *valueList) 
+int GzRender::GzPutAttribute(int numAttributes, GzToken* nameList, GzPointer* valueList)
 {
-/* HW 2.1
--- Set renderer attribute states (e.g.: GZ_RGB_COLOR default color)
--- In later homeworks set shaders, interpolaters, texture maps, and lights
-*/
+	/* HW 2.1
+	-- Set renderer attribute states (e.g.: GZ_RGB_COLOR default color)
+	-- In later homeworks set shaders, interpolaters, texture maps, and lights
+	*/
 
 	for (int i = 0; i < numAttributes; ++i)
 	{
@@ -485,56 +485,56 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 	{
 		switch (nameList[i])
 		{
-			case(GZ_NULL_TOKEN):
-			{
-				break;
+		case(GZ_NULL_TOKEN):
+		{
+			break;
+		}
+
+		case(GZ_POSITION):
+		{
+			float* coords;
+			coords = (float*)(GzPointer)valueList[i];
+			for (int j = 0; j < 3; ++j) {
+				Vector4 input = Vector4(coords[3 * j + 0], coords[3 * j + 1], coords[3 * j + 2]);
+				Vector4 result = MatrixMult(Ximage[matlevel], input);
+				Vector3 ret3 = result.ToVector3();
+
+				transformedCoords[j] = ret3;
 			}
+			break;
+		}
 
-			case(GZ_POSITION):
-			{
-				float* coords;
-				coords = (float*)(GzPointer)valueList[i];
-				for (int j = 0; j < 3; ++j) {
-					Vector4 input = Vector4(coords[3 * j + 0], coords[3 * j + 1], coords[3 * j + 2]);
-					Vector4 result = MatrixMult(Ximage[matlevel], input);
-					Vector3 ret3 = result.ToVector3();
-					
-					transformedCoords[j] = ret3;
-				}
-				break;
+		case(GZ_NORMAL):
+		{
+			float* norms;
+			norms = (float*)(GzPointer)valueList[i];
+
+			for (int j = 0; j < 3; ++j) {
+				Vector4 input = Vector4(norms[3 * j + 0], norms[3 * j + 1], norms[3 * j + 2], 1);
+				Vector4 result = MatrixMult(Xnorm[matlevel], input);
+
+				transformedNorms[j] = result.ToVector3().Normalize();
 			}
+			break;
+		}
 
-			case(GZ_NORMAL):
-			{
-				float* norms;
-				norms = (float*)(GzPointer)valueList[i];
+		case(GZ_TEXTURE_INDEX):
+		{
+			float* uvs;
+			uvs = (float*)(GzPointer)valueList[i];
 
-				for (int j = 0; j < 3; ++j) {
-					Vector4 input = Vector4(norms[3 * j + 0], norms[3 * j + 1], norms[3 * j + 2], 1);
-					Vector4 result = MatrixMult(Xnorm[matlevel], input);
-					
-					transformedNorms[j] = result.ToVector3().Normalize();
-				}
-				break;
+			for (int j = 0; j < 3; ++j) {
+				UVCoords[j].base[0] = uvs[2 * j + 0];
+				UVCoords[j].base[1] = uvs[2 * j + 1];
 			}
+			printf("");
+		}
 
-			case(GZ_TEXTURE_INDEX):
-			{
-				float* uvs;
-				uvs = (float*)(GzPointer)valueList[i];
-
-				for (int j = 0; j < 3; ++j) {
-					UVCoords[j].base[0] = uvs[2 * j + 0];
-					UVCoords[j].base[1] = uvs[2 * j + 1];
-				}
-				printf("");
-			}
-
-			default:
-			{
-				printf("Error: GzPutTriangle doesn't recogonize code %i", nameList[i]);
-				break;
-			}
+		default:
+		{
+			printf("Error: GzPutTriangle doesn't recogonize code %i", nameList[i]);
+			break;
+		}
 		}
 	}
 
@@ -545,10 +545,10 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 		tri.SetUV(i, UVCoords[i]);
 	}
 	// TODO - Material specific parameters
-	//tri.SetKa(this->Ka[0], this->Ka[1], this->Ka[2]);
-	//tri.SetKd(this->Kd[0], this->Kd[1], this->Kd[2]);
-	//tri.SetKs(this->Ks[0], this->Ks[1], this->Ks[2]);
-	//tri.SetSpec(this->spec);
+	tri.SetKa(this->Ka[0], this->Ka[1], this->Ka[2]);
+	tri.SetKd(this->Kd[0], this->Kd[1], this->Kd[2]);
+	tri.SetKs(this->Ks[0], this->Ks[1], this->Ks[2]);
+	tri.SetSpec(this->spec);
 
 	triangleList[numTriangles++] = tri;
 
@@ -565,17 +565,17 @@ bool track = false;
 void configureObject(GzRender* self) {
 	for (int i = 0; i < 2; ++i)
 	{
-		self->triangleList[i].useTexture = false;
-		self->triangleList[i].SetKd(0.828125, 0.78515625, 0.7109375);
+		self->triangleList[i].useTexture = true;
+		//self->triangleList[i].SetKd(0.1, 0.2, 0.5);
 	}
-	for (int i = 2; i < 4; ++i)
+	for (int i = 2; i < self->numTriangles; ++i)
 	{
 		self->triangleList[i].useTexture = false;
 		self->triangleList[i].SetKd(0.8, 0.8, 0.8);
 	}
 }
 
-void GzRender::RayTrace()		
+void GzRender::RayTrace()
 {
 	configureObject(this);
 
@@ -651,26 +651,30 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 	Triangle tri = this->triangleList[triIndex];
 	Vector3 coordData[] = { tri.GetPosition(0), tri.GetPosition(1) , tri.GetPosition(2) };
 	Vector3 normData[] = { tri.GetNorms(0), tri.GetNorms(1) , tri.GetNorms(2) };
-	
+
 	Vector3 E = Vector3(0, 0, -1);
 	Vector3 N = interpolateVector3(coordData, *intersection, normData).Normalize();
 
 	GzColor baseColor = { 0,0,0 };
 	if (tri.useTexture) {
-		Vector3 uvData[] = {tri.GetUV(0), tri.GetUV(1) , tri.GetUV(2)};
+		Vector3 uvData[] = { tri.GetUV(0), tri.GetUV(1) , tri.GetUV(2) };
 		Vector3 intersectionUV = interpolateVector3(coordData, *intersection, uvData);
 		this->tex_fun(intersectionUV.base[0], intersectionUV.base[1], baseColor);
+		tri.SetKa(baseColor[0], baseColor[1], baseColor[2]);
+		tri.SetKd(baseColor[0], baseColor[1], baseColor[2]);
 	}
-	else {
+	/*else {
 		Vector3 kd = tri.GetKd();
 		baseColor[0] = kd.base[0];
 		baseColor[1] = kd.base[1];
 		baseColor[2] = kd.base[2];
-	}
+	}*/
+
 
 	Vector3 illumination(0, 0, 0);
+	Vector3 ka = tri.GetKa();
 	for (int i = 0; i < 3; ++i) {
-		illumination.base[i] = baseColor[i] * this->ambientlight.color[i];
+		illumination.base[i] = ka.base[i] * this->ambientlight.color[i];
 	}
 
 	// TODO - Reflection
@@ -679,12 +683,10 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 	if (depth > 1) {
 		ray = ray.Mult(-1);
 		float dot_RN = N.DotProduct(ray);
-		/*if (dot_RN > 0) {
-			for (int i = 0; i < 3; ++i)
-				N = N.Mult(-1);
-				dot_RN = N.DotProduct(ray);
-
-		}*/
+		if (dot_RN < 0) {
+			N = N.Mult(-1);
+			dot_RN = N.DotProduct(ray);
+		}
 		Vector3 reflection = (N.Mult(2 * dot_RN)).Subtract(ray).Normalize();
 		int* intersectIndex = new int();
 		*intersectIndex = -1;
@@ -721,18 +723,21 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 		if (dot_NL < 0) dot_NL = 0;
 		else if (dot_NL > 1) dot_NL = 1;
 
+		Vector3 ks = tri.GetKs();
+		Vector3 kd = tri.GetKd();
 		// TODO - HARD SHADOW
 		for (int i = 0; i < 3; ++i) {
-			illumination.base[i] += baseColor[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
-			illumination.base[i] += baseColor[i] * this->lights[j].color[i] * dot_NL;
+			illumination.base[i] += ks.base[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
+			illumination.base[i] += kd.base[i] * this->lights[j].color[i] * dot_NL;
 		}
+
 	}
 
 	// TODO - AREA LIGHT + SOFT SHADOW
 
 	Vector3 color(0, 0, 0);
 	for (int i = 0; i < 3; ++i) {
-		color.base[i] = illumination.base[i] + 0.1* reflectionColor.base[i];
+		color.base[i] = illumination.base[i] + 0.5 * reflectionColor.base[i];
 	}
 	return color;
 }
