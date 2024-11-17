@@ -565,13 +565,14 @@ bool track = false;
 void configureObject(GzRender* self) {
 	for (int i = 0; i < 2; ++i)
 	{
-		self->triangleList[i].useTexture = true;
+		self->triangleList[i].useTexture = false;
+		self->triangleList[i].SetKd(0.667, 0.66, 0.68);
 		//self->triangleList[i].SetKd(0.1, 0.2, 0.5);
 	}
 	for (int i = 2; i < self->numTriangles; ++i)
 	{
-		self->triangleList[i].useTexture = false;
-		self->triangleList[i].SetKd(0.8, 0.8, 0.8);
+		self->triangleList[i].useTexture = true;
+		//self->triangleList[i].SetKd(0.8, 0.8, 0.8);
 	}
 }
 
@@ -737,7 +738,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 
 	Vector3 color(0, 0, 0);
 	for (int i = 0; i < 3; ++i) {
-		color.base[i] = illumination.base[i] + 0.5 * reflectionColor.base[i];
+		color.base[i] = illumination.base[i] + 0.3 * reflectionColor.base[i];
 	}
 	return color;
 }
