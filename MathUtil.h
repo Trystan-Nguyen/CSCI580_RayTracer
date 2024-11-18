@@ -64,7 +64,7 @@ class Triangle
 {
 public:
 	float* data;
-	bool useTexture = true;
+	bool useTexture = false;
 	Triangle::Triangle() {
 		data = new float[37]();
 	}

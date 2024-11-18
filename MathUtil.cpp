@@ -231,15 +231,20 @@ float intersection(Vector3 rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 
 }
 
 bool positionInTriangle(Vector3* triangleCoords, Vector3 position) {
-	float a_weight = ((triangleCoords[1].Subtract(position)).Crossproduct((triangleCoords[2].Subtract(position)))).Length();
-	float b_weight = ((triangleCoords[0].Subtract(position)).Crossproduct((triangleCoords[2].Subtract(position)))).Length();
-	float c_weight = ((triangleCoords[0].Subtract(position)).Crossproduct((triangleCoords[1].Subtract(position)))).Length();
+	Vector3 vec1 = triangleCoords[1].Subtract(triangleCoords[0]);
+	Vector3 vec2 = triangleCoords[2].Subtract(triangleCoords[0]);
+	Vector3 norm = vec1.Crossproduct(vec2).Normalize();
 
-	float total_weight = a_weight + b_weight + c_weight;
+	for (int i = 0; i < 3; ++i) {
+		int a = i, b = (i + 1) % 3;
+		Vector3 vec1p = triangleCoords[a].Subtract(position);
+		Vector3 vec2p = triangleCoords[b].Subtract(position);
+		Vector3 normp = vec1p.Crossproduct(vec2p).Normalize();
 
-	float triArea = ((triangleCoords[1].Subtract(triangleCoords[0])).Crossproduct((triangleCoords[2].Subtract(triangleCoords[0])))).Length();
-
-	return fabs(triArea - total_weight) < 0.001;
+		float result = norm.DotProduct(normp);
+		if (result < 0) return false;
+	}
+	return true;
 }
 
 Vector3 sample_square() {
