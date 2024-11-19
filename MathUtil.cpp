@@ -205,7 +205,7 @@ Vector3 interpolateVector3(Vector3* pos, Vector3 ref, Vector3* interpolVals)
 	return result;
 }
 
-float intersection(Vector3 rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 planeNormal, Vector3* position, bool test)
+float intersection(Vector3* rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 planeNormal, Vector3* position, bool test)
 {
 	float LeftEq_t = 0;
 	float RightEq = 0;
@@ -213,7 +213,7 @@ float intersection(Vector3 rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 
 	for (int i = 0; i < 3; ++i)
 	{
 		LeftEq_t += planeNormal.base[i] * ray.base[i];
-		RightEq -= planeNormal.base[i] * (rayOrigin.base[i] - planeOrigin.base[i]);
+		RightEq -= planeNormal.base[i] * (rayOrigin->base[i] - planeOrigin.base[i]);
 	}
 
 	if (LeftEq_t == 0) return -1;
@@ -221,11 +221,11 @@ float intersection(Vector3 rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 
 	float t = RightEq / LeftEq_t;
 	if (t < 0) return -1;
 
-	Vector3 intersection = rayOrigin.Add(ray.Mult(t));
+	Vector3 intersection = rayOrigin->Add(ray.Mult(t));
 	float mag = 0;
 	for (int i = 0; i < 3; ++i) {
 		position->base[i] = intersection.base[i];
-		mag += pow(rayOrigin.base[i] - intersection.base[i], 2);
+		mag += pow(rayOrigin->base[i] - intersection.base[i], 2);
 	}
 	return sqrtf(mag);
 }
@@ -236,7 +236,7 @@ bool positionInTriangle(Vector3* triangleCoords, Vector3 position) {
 	Vector3 norm = vec1.Crossproduct(vec2).Normalize();
 
 	for (int i = 0; i < 3; ++i) {
-		int a = i, b = (i + 1) % 3;
+		int a = i, b = (i+1)%3;
 		Vector3 vec1p = triangleCoords[a].Subtract(position);
 		Vector3 vec2p = triangleCoords[b].Subtract(position);
 		Vector3 normp = vec1p.Crossproduct(vec2p).Normalize();
@@ -246,7 +246,6 @@ bool positionInTriangle(Vector3* triangleCoords, Vector3 position) {
 	}
 	return true;
 }
-
 Vector3 sample_square() {
 	return Vector3(random_double() - 0.5, random_double() - 0.5, 0);
 }

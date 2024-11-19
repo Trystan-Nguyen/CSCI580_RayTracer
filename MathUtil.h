@@ -9,6 +9,7 @@ public:
 	float base[3] = { 0, 0, 0 };
 	Vector3(float x, float y, float z);
 	Vector3(float* a);
+	Vector3() { base[0] = -1; base[1] = -1; base[2] = -1; };
 	Vector3 Subtract(Vector3 v2);
 	Vector3 Add(Vector3 v2);
 	Vector3 Mult(float s);
@@ -135,7 +136,7 @@ public:
 
 };
 
-float intersection(Vector3 rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 planeNormal, Vector3* intersection, bool test = false);
+float intersection(Vector3* rayOrigin, Vector3 ray, Vector3 planeOrigin, Vector3 planeNormal, Vector3* intersection, bool test = false);
 bool positionInTriangle(Vector3* triangleCoords, Vector3 position);
 
 inline double random_double() {
