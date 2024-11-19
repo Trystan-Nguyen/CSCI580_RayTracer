@@ -153,9 +153,9 @@ int GzRender::GzDefault()
 
 	for (int i = 0; i < this->xres * this->yres; ++i)
 	{
-		pixelbuffer[i].red = 2055;
-		pixelbuffer[i].green = 1798;
-		pixelbuffer[i].blue = 1541;
+		pixelbuffer[i].red = 0;
+		pixelbuffer[i].green = 0;
+		pixelbuffer[i].blue = 0;
 		//pixelbuffer[i].alpha = 1;
 		pixelbuffer[i].z = INT_MAX;
 	}
@@ -570,66 +570,36 @@ struct AreaLight {
 	float samplePerSide = 0;
 	AreaLight() {};
 };
-bool useAreaLight = false;
 AreaLight aLight = AreaLight();
 
 // Change based on what you are trying to do
 void configureObject(GzRender* self) {
-	for (int i = 0; i < self->numTriangles; ++i)
+	for (int i = 0; i < 2; ++i)
 	{
 		self->triangleList[i].useTexture = false;
-		self->triangleList[i].SetKd(0.828125, 0.78515625, 0.7109375);
+		self->triangleList[i].SetKd(0.667, 0.66, 0.68);
+		//self->triangleList[i].SetKd(0.1, 0.2, 0.5);
+	}
+	for (int i = 2; i < self->numTriangles; ++i)
+	{
+		self->triangleList[i].useTexture = true;
+		//self->triangleList[i].SetKd(0.828125, 0.78515625, 0.7109375);
 	}
 	
-	Vector3 avg = sumPos.Mult(1.0 / numPos);
-	printf("");
+	//*
+	
+	//Vector3 avg = sumPos.Mult(1.0 / numPos);
+	//printf("");
 
+	Vector3 potPos = Vector3(1.07517409, -0.0358668454, 19.2086315);
+	Vector3 toShadow = self->triangleList[1].GetPosition(1);
+	Vector3 position = potPos.Subtract(toShadow).Normalize().Mult(25).Add(potPos);
 
-	Vector3 a = Vector3(-1.03711438, -12.1594515, 32.2999420);
-	Vector3 b = Vector3(-100.924759, 44.0511513, 143.932251);
-	Vector3 c = Vector3(23.7079220, 99.5476532, 227.513214);
-	Vector3 d = Vector3(123.595573, 43.3370552, 115.880905);
-
-	Vector3 v1 = a.Subtract(b).Normalize();
-	Vector3 v2 = c.Subtract(b).Normalize();
-	Vector3 norm = v1.Crossproduct(v2).Normalize();
-
-	float s = 2.5;
-	a = a.Add(norm.Mult(s));
-	b = b.Add(norm.Mult(s));
-	c = c.Add(norm.Mult(s));
-	d = d.Add(norm.Mult(s));
-	Vector3 avgFloor = a.Add(b).Add(c).Add(d).Mult(1.0 / 4.0);
-
-
-	Triangle floor1 = Triangle();
-	floor1.SetPositions(0, a);
-	floor1.SetPositions(1, b);
-	floor1.SetPositions(2, c);
-	floor1.SetKd(0.8, 0.8, 0.8);
-	floor1.useTexture = false;
-
-	Triangle floor2 = Triangle();
-	floor2.SetPositions(0, a);
-	floor2.SetPositions(1, d);
-	floor2.SetPositions(2, c);
-	floor2.SetKd(0.8, 0.8, 0.8);
-	floor2.useTexture = false;
-
-	for (int i = 0; i < 3; ++i) {
-		floor1.SetNorms(i, norm);
-		floor2.SetNorms(i, norm);
-	}
-	self->triangleList[(self->numTriangles)++] = floor1;
-	self->triangleList[(self->numTriangles)++] = floor2;
-
-	self->numlights = 0;
-
-	useAreaLight = true;
-	aLight.color = Vector3(0.7, 0.7, 0.7);
-	aLight.position = Vector3(-80, -40, -250);
+	aLight.color = Vector3(0.4, 0.4, 0.4);
+	aLight.position = position;
 	aLight.sideLength = 25;
-	aLight.samplePerSide = 5;
+	aLight.samplePerSide = 3;
+	//*/
 }
 
 
@@ -651,7 +621,7 @@ void GzRender::RayTrace()
 
 	for (int x = 0; x < xres; ++x) {
 		for (int y = 0; y < yres; ++y) {
-			// TODO - Antialiasing by rays
+			// Antialiasing by rays
 			Vector3 color = Vector3(0, 0, 0);
 			for (int sample = 0; sample < SAMPLES_PER_PIXEL; sample++) {
 				auto offset = sample_square(); // a vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
@@ -671,12 +641,14 @@ void GzRender::RayTrace()
 				RayCast(origin, ray, triIndex, intersectPos);
 
 				if (*triIndex != -1) {
-					Vector3 color = ComputeShading(*triIndex, intersectPos, ray, 2);
-					GzPut(x, y, ctoi(color.base[0]), ctoi(color.base[1]), ctoi(color.base[2]), 1, 1);
+					Vector3 tempcolor = ComputeShading(*triIndex, intersectPos, ray, 2);
+					color = color.Add(tempcolor);
 				}
 
-			delete intersectPos;
-			delete triIndex;
+				delete intersectPos;
+				delete triIndex;
+			}
+			GzPut(x, y, ctoi(color.base[0]/ SAMPLES_PER_PIXEL), ctoi(color.base[1]/ SAMPLES_PER_PIXEL), ctoi(color.base[2]/ SAMPLES_PER_PIXEL), 1, 1);
 		}
 	}
 	delete origin;
@@ -710,7 +682,7 @@ void GzRender::RayCast(Vector3* origin, Vector3 direction, int* triangleIndex, V
 	}
 }
 
-Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 EyeRay) {
+Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 EyeRay, int depth) {
 	Triangle tri = this->triangleList[triIndex];
 	Vector3 coordData[] = { tri.GetPosition(0), tri.GetPosition(1) , tri.GetPosition(2) };
 	Vector3 normData[] = { tri.GetNorms(0), tri.GetNorms(1) , tri.GetNorms(2) };
@@ -730,13 +702,6 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 		baseColor[1] = kd.base[1];
 		baseColor[2] = kd.base[2];
 	}
-	/*else {
-		Vector3 kd = tri.GetKd();
-		baseColor[0] = kd.base[0];
-		baseColor[1] = kd.base[1];
-		baseColor[2] = kd.base[2];
-	}*/
-
 
 	Vector3 illumination(0, 0, 0);
 	Vector3 ka = tri.GetKa();
@@ -744,11 +709,11 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 		illumination.base[i] = ka.base[i] * this->ambientlight.color[i];
 	}
 
-	// TODO - Reflection
+	// Reflection
 	// Recalculate reflective vector
 	Vector3 reflectionColor = { 0,0,0 };
 	if (depth > 1) {
-		ray = ray.Mult(-1);
+		Vector3 ray = EyeRay.Mult(-1);
 		float dot_RN = N.DotProduct(ray);
 		if (dot_RN < 0) {
 			N = N.Mult(-1);
@@ -758,7 +723,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 		int* intersectIndex = new int();
 		*intersectIndex = -1;
 		Vector3* intersect2 = new Vector3(0, 0, 0);
-		RayCast(*intersection, reflection, intersectIndex, intersect2);
+		RayCast(intersection, reflection, intersectIndex, intersect2);
 		if (*intersectIndex != -1) {
 			//return Vector3(0, 0, 0);
 			reflectionColor = ComputeShading(*intersectIndex, intersect2, reflection, depth - 1);
@@ -806,7 +771,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 	}
 
 	// SOFT SHADOW
-	{
+	if (false){
 		//**
 		float lightIntensity = 0;
 		for (int x = 0; x < aLight.samplePerSide; ++x) {

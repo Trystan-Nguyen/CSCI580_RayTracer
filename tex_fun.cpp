@@ -79,7 +79,7 @@ int ptex_fun(float u, float v, GzColor color)
     color[0] = val;
     color[1] = val;
     color[2] = val;
-
+    /**
     if (val > 0.0)
     {
         float thetaX = u * 2 * 3.14159;
@@ -91,6 +91,7 @@ int ptex_fun(float u, float v, GzColor color)
         float yP = pow(0.2 * sin(2*thetaY) + 0.5,2);
         if (fabs(yP - u) < 0.5) color[2] *= 0.33;
     }
+    */
 
 	return GZ_SUCCESS;
 }
