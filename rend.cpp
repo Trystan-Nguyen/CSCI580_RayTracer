@@ -611,13 +611,14 @@ void GzRender::RayTrace()
 				Vector3* intersectPos = new Vector3(0, 0, 0);
 				RayCast(origin, ray, triIndex, intersectPos);
 
-			if (*triIndex != -1) {
-				Vector3 color = ComputeShading(*triIndex, intersectPos, ray, 2);
-				GzPut(x, y, ctoi(color.base[0]), ctoi(color.base[1]), ctoi(color.base[2]), 1, 1);
-			}
+				if (*triIndex != -1) {
+					Vector3 color = ComputeShading(*triIndex, intersectPos, ray, 2);
+					GzPut(x, y, ctoi(color.base[0]), ctoi(color.base[1]), ctoi(color.base[2]), 1, 1);
+				}
 
-			delete intersectPos;
-			delete triIndex;
+				delete intersectPos;
+				delete triIndex;
+			}
 		}
 	}
 }
