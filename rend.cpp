@@ -652,6 +652,8 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 	Triangle tri = this->triangleList[triIndex];
 	Vector3 coordData[] = { tri.GetPosition(0), tri.GetPosition(1) , tri.GetPosition(2) };
 	Vector3 normData[] = { tri.GetNorms(0), tri.GetNorms(1) , tri.GetNorms(2) };
+	Vector3 ks = tri.GetKs();
+	Vector3 kd = tri.GetKd();
 
 	Vector3 E = Vector3(0, 0, -1);
 	Vector3 N = interpolateVector3(coordData, *intersection, normData).Normalize();
@@ -681,6 +683,9 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 	// TODO - Reflection
 	// Recalculate reflective vector
 	Vector3 reflectionColor = { 0,0,0 };
+	Vector3* intersect2 = new Vector3(0, 0, 0);
+	int* intersectIndex = new int();
+	*intersectIndex = -1;
 	if (depth > 1) {
 		ray = ray.Mult(-1);
 		float dot_RN = N.DotProduct(ray);
@@ -689,16 +694,11 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 			dot_RN = N.DotProduct(ray);
 		}
 		Vector3 reflection = (N.Mult(2 * dot_RN)).Subtract(ray).Normalize();
-		int* intersectIndex = new int();
-		*intersectIndex = -1;
-		Vector3* intersect2 = new Vector3(0, 0, 0);
+		
 		RayCast(*intersection, reflection, intersectIndex, intersect2);
 		if (*intersectIndex != -1) {
-			//return Vector3(0, 0, 0);
 			reflectionColor = ComputeShading(*intersectIndex, intersect2, reflection, depth - 1);
 		}
-		delete intersectIndex;
-		delete intersect2;
 	}
 
 	for (int j = 0; j < this->numlights; ++j) {
@@ -724,21 +724,22 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 		if (dot_NL < 0) dot_NL = 0;
 		else if (dot_NL > 1) dot_NL = 1;
 
-		Vector3 ks = tri.GetKs();
-		Vector3 kd = tri.GetKd();
 		// TODO - HARD SHADOW
-		for (int i = 0; i < 3; ++i) {
-			illumination.base[i] += ks.base[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
-			illumination.base[i] += kd.base[i] * this->lights[j].color[i] * dot_NL;
+		if (*intersectIndex == -1) {
+			for (int i = 0; i < 3; ++i) {
+				illumination.base[i] += ks.base[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
+				illumination.base[i] += kd.base[i] * this->lights[j].color[i] * dot_NL;
+			}
 		}
-
 	}
 
 	// TODO - AREA LIGHT + SOFT SHADOW
 
 	Vector3 color(0, 0, 0);
 	for (int i = 0; i < 3; ++i) {
-		color.base[i] = illumination.base[i] + 0.3 * reflectionColor.base[i];
+		color.base[i] = illumination.base[i] + (1 - ks.base[i]) * reflectionColor.base[i];
 	}
+	delete intersectIndex;
+	delete intersect2;
 	return color;
 }
