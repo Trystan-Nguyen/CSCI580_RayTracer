@@ -6,6 +6,7 @@
 #include	"Gz.h"
 #include	"rend.h"
 #include <cstdlib>
+#include <omp.h>
 
 #define PI (float) 3.14159265358979323846
 bool pushIdentityNorm = false;
@@ -591,14 +592,12 @@ void configureObject(GzRender* self) {
 	//Vector3 avg = sumPos.Mult(1.0 / numPos);
 	//printf("");
 
-	Vector3 potPos = Vector3(1.07517409, -0.0358668454, 19.2086315);
-	Vector3 toShadow = self->triangleList[1].GetPosition(1);
-	Vector3 position = potPos.Subtract(toShadow).Normalize().Mult(25).Add(potPos);
+	Vector3 position = Vector3(-14.1650524, 28.0658951, -30.0591621);
 
 	aLight.color = Vector3(0.4, 0.4, 0.4);
 	aLight.position = position;
-	aLight.sideLength = 25;
-	aLight.samplePerSide = 3;
+	aLight.sideLength = 10;
+	aLight.samplePerSide = 4;
 	//*/
 }
 
@@ -619,6 +618,7 @@ void GzRender::RayTrace()
 	//Vector3 origin = Vector3(this->m_camera.position[0], this->m_camera.position[1], this->m_camera.position[2]);
 	Vector3* origin = new Vector3(0, 0, this->m_camera.position[2]);
 
+	#pragma omp parallel for collapse(2)
 	for (int x = 0; x < xres; ++x) {
 		for (int y = 0; y < yres; ++y) {
 			// Antialiasing by rays
@@ -712,7 +712,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 	// Reflection
 	// Recalculate reflective vector
 	Vector3 reflectionColor = { 0,0,0 };
-	if (depth > 1) {
+	if (depth > 1 && triIndex < 2) {
 		Vector3 ray = EyeRay.Mult(-1);
 		float dot_RN = N.DotProduct(ray);
 		if (dot_RN < 0) {
@@ -771,7 +771,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 	}
 
 	// SOFT SHADOW
-	if (false){
+	if (triIndex < 2){
 		//**
 		float lightIntensity = 0;
 		for (int x = 0; x < aLight.samplePerSide; ++x) {
@@ -832,6 +832,42 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 
 		//delete intersectIndex;
 		//delete intersect2;
+	}
+	else {
+		Vector3 L = aLight.position.Subtract(*intersection).Normalize();
+		bool calc = true;
+		float dot_NL = N.DotProduct(L);
+		float dot_NE = N.DotProduct(E);
+		if (dot_NL >= 0 && dot_NE >= 0) {}
+		else if (dot_NL < 0 && dot_NE < 0) {
+			N = N.Mult(-1);
+			dot_NL = N.DotProduct(L);
+		}
+		else calc = false;
+
+		int* intersectIndex = new int();
+		*intersectIndex = -1;
+		Vector3* intersect2 = new Vector3(0, 0, 0);
+		RayCast(intersection, L, intersectIndex, intersect2, triIndex);
+
+		if (calc && *intersectIndex == -1) {
+			Vector3 R = (N.Mult(2 * dot_NL)).Subtract(L).Normalize();
+
+			float dot_RE = R.DotProduct(E);
+			if (dot_RE < 0) dot_RE = 0;
+			else if (dot_RE > 1) dot_RE = 1;
+			if (dot_NL < 0) dot_NL = 0;
+			else if (dot_NL > 1) dot_NL = 1;
+
+			float intensity = 1.0;
+			for (int j = 0; j < 3; ++j) {
+				//illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * pow(dot_RE, this->spec);
+				illumination.base[j] += intensity * baseColor[j] * aLight.color.base[j] * dot_NL;
+			}
+		}
+
+		delete intersectIndex;
+		delete intersect2;
 	}
 
 	Vector3 color(0, 0, 0);
