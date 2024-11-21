@@ -69,8 +69,9 @@ int Application5::Initialize()
 	/*
 	 * initialize the display and the renderer
 	 */
-	m_nWidth = 256;		// frame buffer and display width
-	m_nHeight = 256;    // frame buffer and display height
+	int s = 2;
+	m_nWidth = 256 * s;		// frame buffer and display width
+	m_nHeight = 256 * s;    // frame buffer and display height
 
 	m_pRender = new GzRender(m_nWidth, m_nHeight);
 	m_pRender->GzDefault();
@@ -182,8 +183,8 @@ int Application5::Initialize()
 #if 0   /* set up null texture function or valid pointer */
 	valueListShader[5] = (GzPointer)0;
 #else
-	//valueListShader[5] = (GzPointer)(tex_fun);	/* or use ptex_fun */
-	valueListShader[5] = (GzPointer)(ptex_fun);	/* or use ptex_fun */
+	valueListShader[5] = (GzPointer)(tex_fun);	/* or use ptex_fun */
+	//valueListShader[5] = (GzPointer)(ptex_fun);	/* or use ptex_fun */
 #endif
 	status |= m_pRender->GzPutAttribute(6, nameListShader, valueListShader);
 

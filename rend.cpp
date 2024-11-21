@@ -566,12 +566,14 @@ void configureObject(GzRender* self) {
 	for (int i = 0; i < 2; ++i)
 	{
 		self->triangleList[i].useTexture = false;
+		self->triangleList[i].doReflection = true;
 		self->triangleList[i].SetKd(0.667, 0.66, 0.68);
 		//self->triangleList[i].SetKd(0.1, 0.2, 0.5);
 	}
 	for (int i = 2; i < self->numTriangles; ++i)
 	{
 		self->triangleList[i].useTexture = true;
+		self->triangleList[i].doReflection = false;
 		//self->triangleList[i].SetKd(0.8, 0.8, 0.8);
 	}
 }
@@ -686,7 +688,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 	Vector3* intersect2 = new Vector3(0, 0, 0);
 	int* intersectIndex = new int();
 	*intersectIndex = -1;
-	if (depth > 1) {
+	if (tri.doReflection && depth > 1) {
 		ray = ray.Mult(-1);
 		float dot_RN = N.DotProduct(ray);
 		if (dot_RN < 0) {
@@ -737,7 +739,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ra
 
 	Vector3 color(0, 0, 0);
 	for (int i = 0; i < 3; ++i) {
-		color.base[i] = illumination.base[i] + (1 - ks.base[i]) * reflectionColor.base[i];
+		color.base[i] = illumination.base[i] + 0.5 *(1 - ks.base[i]) * reflectionColor.base[i];
 	}
 	delete intersectIndex;
 	delete intersect2;
