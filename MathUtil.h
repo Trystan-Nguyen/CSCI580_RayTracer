@@ -1,7 +1,7 @@
 #pragma once
 
 #include	"Gz.h"
-
+#include "vec3.h"
 class Vector3
 {
 public:
@@ -40,6 +40,7 @@ public:
 
 	float* ToVector3F();
 	Vector3 ToVector3();
+	vec3 ToVec3();
 
 	void InvertDirection();
 	Vector4 Crossproduct(Vector4);

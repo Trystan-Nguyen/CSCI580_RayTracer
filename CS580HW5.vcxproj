@@ -156,18 +156,26 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Application5.h" />
+    <ClInclude Include="color.h" />
     <ClInclude Include="CS580HW.h" />
     <ClInclude Include="CS580HWDoc.h" />
     <ClInclude Include="CS580HWView.h" />
     <ClInclude Include="gz.h" />
+    <ClInclude Include="hittable.h" />
+    <ClInclude Include="hittable_list.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MathUtil.h" />
+    <ClInclude Include="ray.h" />
     <ClInclude Include="rend.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RotateDlg.h" />
+    <ClInclude Include="rt.h" />
     <ClInclude Include="ScaleDlg.h" />
+    <ClInclude Include="sphere.h" />
     <ClInclude Include="StdAfx.h" />
     <ClInclude Include="TranslateDlg.h" />
+    <ClInclude Include="triangle.h" />
+    <ClInclude Include="vec3.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\CS580HW.ico" />

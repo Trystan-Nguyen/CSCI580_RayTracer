@@ -56,6 +56,11 @@ Vector3 Vector4::ToVector3()
 	return Vector3(base[0] / base[3], base[1] / base[3], base[2] / base[3]);
 }
 
+vec3 Vector4::ToVec3()
+{
+	return vec3(base[0] / base[3], base[1] / base[3], base[2] / base[3]);
+}
+
 Vector4 Vector4::Crossproduct(Vector4 cross) 
 {
 	Vector4 ret = Vector4(0,0,0);

@@ -11,6 +11,7 @@
 #include "Application5.h"
 #include "Gz.h"
 #include "rend.h"
+#include "rt.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -29,8 +30,6 @@ static char THIS_FILE[] = __FILE__;
 extern int tex_fun(float u, float v, GzColor color); /* image texture function */
 extern int ptex_fun(float u, float v, GzColor color); /* procedural texture function */
 extern int GzFreeTexture();
-
-void shade(GzCoord norm, GzCoord color);
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction

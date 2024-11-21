@@ -1,5 +1,11 @@
 #include	"gz.h"
 #include "MathUtil.h";
+#include "rt.h"
+#include "hittable.h"
+#include "hittable_list.h"
+#include "sphere.h"
+#include "triangle.h"
+
 #ifndef GZRENDER_
 #define GZRENDER_
 
@@ -42,6 +48,15 @@ public:
 	GzColor		Ka, Kd, Ks;
 	float		    spec;		/* specular power */
 	GzTexture		tex_fun;    /* tex_fun(float u, float v, GzColor color) */
+
+	double aspect_ratio = 1.0;  // Ratio of image width over height
+	int    image_width;  // Rendered image width in pixel count
+	int    image_height;   // Rendered image height
+	point3 center;         // Camera center
+	point3 pixel00_loc;    // Location of pixel 0, 0
+	vec3   pixel_delta_u;  // Offset to pixel to the right
+	vec3   pixel_delta_v;  // Offset to pixel below
+	hittable_list world;
 
   	// Constructors
 	GzRender(int xRes, int yRes);
@@ -89,5 +104,7 @@ public:
 	
 	Vector3 ComputeShading(int triIndex, Vector3* intersection, Vector3 ray, int depth);
 	Vector3 ray_color(Vector3 origin, Vector3 ray, int depth);
+	Vector3 ray_color(const ray& r, int depth);
+	color ray_color(const ray& r, const hittable& world);
 };
 #endif

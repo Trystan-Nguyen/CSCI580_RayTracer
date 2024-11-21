@@ -5,6 +5,7 @@
 #include	"math.h"
 #include	"Gz.h"
 #include	"rend.h"
+#include	"rt.h"
 #include <cstdlib>
 
 #define PI (float) 3.14159265358979323846
@@ -138,6 +139,35 @@ GzRender::GzRender(int xRes, int yRes)
 
 	numTriangles = 0;
 	triangleList = new Triangle[MAX_TRIANGLES]();
+
+	// Image
+	image_width = xres;
+	image_height = int(image_width / this->aspect_ratio);
+	image_height = (image_height < 1) ? 1 : image_height;
+
+	center = point3(0, 0, 0);
+
+	// Determine viewport dimensions.
+	auto focal_length = 1.0;
+	auto viewport_height = 2.0;
+	auto viewport_width = viewport_height * (double(image_width) / image_height);
+
+	// Calculate the vectors across the horizontal and down the vertical viewport edges.
+	auto viewport_u = vec3(viewport_width, 0, 0);
+	auto viewport_v = vec3(0, -viewport_height, 0);
+
+	// Calculate the horizontal and vertical delta vectors from pixel to pixel.
+	pixel_delta_u = viewport_u / image_width;
+	pixel_delta_v = viewport_v / image_height;
+
+	// Calculate the location of the upper left pixel.
+	auto viewport_upper_left =
+		center - vec3(0, 0, -focal_length) - viewport_u / 2 - viewport_v / 2;
+	pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+
+	//world.add(make_shared<sphere>(point3(0, 0, 1), 0.5));
+	world.add(make_shared<sphere>(point3(0, -100.5, 1), 100));
+	//world.add(make_shared<triangle>(point3(0, 0, 1), point3(0, 0.5, 1), point3(0.5, 0, 1)));
 }
 
 GzRender::~GzRender()
@@ -471,8 +501,8 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 	-- Return error code
 	*/
 
-	Vector3 transformedCoords[] = {
-		Vector3(0,0,0), Vector3(0,0,0), Vector3(0,0,0)
+	vec3 transformedCoords[] = {
+		vec3(0,0,0), vec3(0,0,0), vec3(0,0,0)
 	};
 	Vector3 transformedNorms[] = {
 		Vector3(0,0,0), Vector3(0,0,0), Vector3(0,0,0)
@@ -497,7 +527,7 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 			for (int j = 0; j < 3; ++j) {
 				Vector4 input = Vector4(coords[3 * j + 0], coords[3 * j + 1], coords[3 * j + 2]);
 				Vector4 result = MatrixMult(Ximage[matlevel], input);
-				Vector3 ret3 = result.ToVector3();
+				vec3 ret3 = result.ToVec3();
 
 				transformedCoords[j] = ret3;
 			}
@@ -538,9 +568,11 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 		}
 	}
 
+	world.add(make_shared<triangle>(transformedCoords[0], transformedCoords[1], transformedCoords[2]));
+
 	Triangle tri = Triangle();
 	for (int i = 0; i < 3; ++i) {
-		tri.SetPositions(i, transformedCoords[i]);
+		//tri.SetPositions(i, transformedCoords[i]);
 		tri.SetNorms(i, transformedNorms[i]);
 		tri.SetUV(i, UVCoords[i]);
 	}
@@ -582,38 +614,70 @@ void GzRender::RayTrace()
 {
 	configureObject(this);
 
-	float fov = 60.0;
-	float aspectRatio = float(xres) / yres;
-	float left = -aspectRatio * tan(3.14159 * double(fov) / 2 / 180);
-	float right = aspectRatio * tan(3.14159 * double(fov) / 2 / 180);
-	float top = tan(3.14159 * double(fov) / 2 / 180);
-	float bot = -tan(3.14159 * double(fov) / 2 / 180);
+	//float fov = 60.0;
+	//float aspectRatio = float(xres) / yres;
+	//float left = -aspectRatio * tan(3.14159 * double(fov) / 2 / 180);
+	//float right = aspectRatio * tan(3.14159 * double(fov) / 2 / 180);
+	//float top = tan(3.14159 * double(fov) / 2 / 180);
+	//float bot = -tan(3.14159 * double(fov) / 2 / 180);
 
-	//Vector3 origin = Vector3(this->m_camera.position[0], this->m_camera.position[1], this->m_camera.position[2]);
-	Vector3 origin = Vector3(0, 0, this->m_camera.position[2]);
+	////Vector3 origin = Vector3(this->m_camera.position[0], this->m_camera.position[1], this->m_camera.position[2]);
+	////Vector3 origin = Vector3(0, 0, this->m_camera.position[2]);
+	//auto camera_center = point3(0, 0, this->m_camera.position[2]);
 
-	for (int x = 0; x < xres; ++x) {
-		for (int y = 0; y < yres; ++y) {
-			// TODO - Antialiasing by rays
+	for (int j = 0; j < image_height; j++) {
+		std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+		for (int i = 0; i < image_width; i++) {
+			auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+			auto ray_direction = pixel_center - center;
+			ray r(center, ray_direction);
 
-			// Center of pixel
-			float cx = float(2 * x + 1) / (2 * xres);
-			float cy = float(2 * y + 1) / (2 * yres);
-
-			// Ray Direction
-			Vector3 ray = Vector3(
-				(1.0 - cx) * left + cx * right,
-				cy * bot + (1.0 - cy) * top,
-				1
-			).Normalize();
-
-			Vector3 color = ray_color(origin, ray, 2);
-			GzPut(x, y, ctoi(color.base[0]), ctoi(color.base[1]), ctoi(color.base[2]), 1, 1);
+			color pixel_color = ray_color(r, world);
+			GzPut(i, j, ctoi(pixel_color[0]), ctoi(pixel_color[1]), ctoi(pixel_color[2]), 1, 1);
 			
 		}
 	}
 }
 
+double hit_sphere(const point3& center, double radius, const ray& r) {
+	vec3 oc = center - r.origin();
+	auto a = dot(r.direction(), r.direction());
+	auto b = -2.0 * dot(r.direction(), oc);
+	auto c = dot(oc, oc) - radius * radius;
+	auto discriminant = b * b - 4 * a * c;
+
+	if (discriminant < 0) {
+		return -1.0;
+	}
+	else {
+		return (-b - std::sqrt(discriminant)) / (2.0 * a);
+	}
+}
+
+
+color GzRender::ray_color(const ray& r, const hittable& world) {
+	hit_record rec;
+	if (world.hit(r, 0, infinity, rec)) {
+		rec.normal.e[2] = -rec.normal.e[2]; //invert z to get a blue/purple color instead of red/green/yellow
+		return 0.5 * (rec.normal + color(1, 1, 1));
+	}
+
+	vec3 unit_direction = unit_vector(r.direction());
+	auto a = 0.5 * (unit_direction.y() + 1.0);
+	return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
+}
+
+//color GzRender::ray_color(const ray& r) {
+//	auto t = hit_sphere(point3(0, 0, -1), 0.5, r);
+//	if (t > 0.0) {
+//		vec3 N = unit_vector(r.at(t) - vec3(0, 0, -1));
+//		return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
+//	}
+//
+//	vec3 unit_direction = unit_vector(r.direction());
+//	auto a = 0.5 * (unit_direction.y() + 1.0);
+//	return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
+//}
 Vector3 GzRender::ray_color(Vector3 origin, Vector3 ray, int depth) {
 	// If we've exceeded the ray bounce limit, no more light is gathered.
 	if (depth <= 0)

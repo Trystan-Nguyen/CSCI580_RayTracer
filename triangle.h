@@ -12,7 +12,7 @@ public:
 		vec3 n = unit_vector(cross(v1 - v0, v2 - v0));
 
 		auto LeftEq_t = dot(n, r.direction());
-		auto RightEq = dot(n, (r.origin() - v0));
+		auto RightEq = -dot(n, (r.origin() - v0));
 
 		if (LeftEq_t == 0) return false;
 
