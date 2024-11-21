@@ -17,6 +17,14 @@ public:
 	float Length();
 };
 
+inline Vector3 operator+(const Vector3& u, const Vector3& v) {
+	return Vector3(u.base[0] + v.base[0], u.base[1] + v.base[1], u.base[2] + v.base[2]);
+}
+
+inline Vector3 operator*(double t, const Vector3& v) {
+	return Vector3(t * v.base[0], t * v.base[1], t * v.base[2]);
+}
+
 class Vector4
 {
 
@@ -57,6 +65,7 @@ class Triangle
 public:
 	float* data;
 	bool useTexture = false;
+	bool useReflectedIntensity = false;
 	Triangle::Triangle() {
 		data = new float[37]();
 	}
