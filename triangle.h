@@ -6,8 +6,8 @@
 
 class triangle : public hittable {
 public:
-    triangle(const point3& v0, const point3& v1, const point3& v2, const vec3& n0, const vec3& n1, const vec3& n2) 
-		: v0(v0), v1(v1), v2(v2), n0(n0), n1(n1), n2(n2) {}
+    triangle(const point3& v0, const point3& v1, const point3& v2, const vec3& n0, const vec3& n1, const vec3& n2, shared_ptr<material> mat)
+		: v0(v0), v1(v1), v2(v2), n0(n0), n1(n1), n2(n2), mat(mat) {}
 
 	vec3 interpolateVector3(vec3 t) const
 	{
@@ -50,6 +50,7 @@ public:
 		rec.t = t;
 		rec.p = p;
 		rec.normal = interpolateVector3(p);
+		rec.mat = mat;
 		return true;
     }
 
@@ -60,6 +61,7 @@ private:
 	vec3 n0;
 	vec3 n1;
 	vec3 n2;
+	shared_ptr<material> mat;
 };
 
 #endif

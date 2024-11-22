@@ -165,8 +165,9 @@ GzRender::GzRender(int xRes, int yRes)
 		center - vec3(0, 0, -focal_length) - viewport_u / 2 - viewport_v / 2;
 	pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
-	//world.add(make_shared<sphere>(point3(0.7, 0, 1), 0.3));
-	//world.add(make_shared<sphere>(point3(0, -100.5, 1), 100));
+	auto phong_model = make_shared<material>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, 0.5);
+	world.add(make_shared<sphere>(point3(-3, 0, 4), 1, phong_model));
+	world.add(make_shared<sphere>(point3(0, -107.5, 1), 100, phong_model));
 	//world.add(make_shared<triangle>(point3(0, -0.5, 1), point3(0, 0, 1), point3(0.5, -0.5, 1)));
 	//world.add(make_shared<triangle>(point3(-33.48, 2.28, 43.59), point3(-6.46, 32.5, 11.03), point3(35.13, 1.91, 17.15)));
 
@@ -569,89 +570,64 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 		}
 		}
 	}
+	auto phong_model = make_shared<material>(color(this->Kd[0], this->Kd[1], this->Kd[2]),
+										color(this->Ka[0], this->Ka[1], this->Ka[2]),
+										color(this->Ks[0], this->Ks[1], this->Ks[2]), this->spec, 0);
+	if (numTriangles <= 2) {
+		phong_model = make_shared<material>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, 0.2);
+	}	
 
 	world.add(make_shared<triangle>(transformedCoords[0], transformedCoords[1], transformedCoords[2], 
-		transformedNorms[0], transformedNorms[1], transformedNorms[2]));
-
-	//Triangle tri = Triangle();
-	//for (int i = 0; i < 3; ++i) {
-	//	tri.SetPositions(i, transformedCoords[i]);
-	//	tri.SetNorms(i, transformedNorms[i]);
-	//	tri.SetUV(i, UVCoords[i]);
-	//}
-	//// TODO - Material specific parameters
-	//tri.SetKa(this->Ka[0], this->Ka[1], this->Ka[2]);
-	//tri.SetKd(this->Kd[0], this->Kd[1], this->Kd[2]);
-	//tri.SetKs(this->Ks[0], this->Ks[1], this->Ks[2]);
-	//tri.SetSpec(this->spec);
-
-	//triangleList[numTriangles++] = tri;
-
-	//float u_test = tri.data[18 + (3 * 0) + 0];
-	//float v_test = tri.data[18 + (3 * 0) + 1];
-	//Vector3 a = tri.GetUV(0);
-
+		transformedNorms[0], transformedNorms[1], transformedNorms[2], phong_model));
+	numTriangles++;
 	return GZ_SUCCESS;
-}
-
-bool track = false;
-
-// Change based on what you are trying to do
-void configureObject(GzRender* self) {
-	for (int i = 0; i < 2; ++i)
-	{
-		self->triangleList[i].useTexture = false;
-		self->triangleList[i].useReflectedIntensity = true;
-		//self->triangleList[i].SetKd(0.667, 0.66, 0.68);
-		self->triangleList[i].SetKd(0.2, 0.2, 0.2);
-	}
-	for (int i = 2; i < self->numTriangles; ++i)
-	{
-		self->triangleList[i].useTexture = true;
-		self->triangleList[i].useReflectedIntensity = false;
-		//self->triangleList[i].SetKd(0.8, 0.8, 0.8);
-	}
 }
 
 void GzRender::RayTrace()
 {
-	configureObject(this);
-
-	//float fov = 60.0;
-	//float aspectRatio = float(xres) / yres;
-	//float left = -aspectRatio * tan(3.14159 * double(fov) / 2 / 180);
-	//float right = aspectRatio * tan(3.14159 * double(fov) / 2 / 180);
-	//float top = tan(3.14159 * double(fov) / 2 / 180);
-	//float bot = -tan(3.14159 * double(fov) / 2 / 180);
-
-	////Vector3 origin = Vector3(this->m_camera.position[0], this->m_camera.position[1], this->m_camera.position[2]);
-	////Vector3 origin = Vector3(0, 0, this->m_camera.position[2]);
-	//auto camera_center = point3(0, 0, this->m_camera.position[2]);
-
 	for (int j = 0; j < image_height; j++) {
 		std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
 		for (int i = 0; i < image_width; i++) {
-			auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-			auto ray_direction = pixel_center - center;
-			ray r(center, ray_direction);
-
-			color pixel_color = ray_color(r, 2, world);
-			GzPut(i, j, ctoi(pixel_color[0]), ctoi(pixel_color[1]), ctoi(pixel_color[2]), 1, 1);
+			color pixel_color(0, 0, 0);
+			for (int sample = 0; sample < SAMPLES_PER_PIXEL; sample++) {
+				ray r = get_ray(i, j);
+				pixel_color += ray_color(r, 2, world);
+			}
+			GzPut(i, j, ctoi(pixel_color[0] / SAMPLES_PER_PIXEL), ctoi(pixel_color[1] / SAMPLES_PER_PIXEL), ctoi(pixel_color[2] / SAMPLES_PER_PIXEL), 1, 1);
 			
 		}
 	}
 }
 
+ray GzRender::get_ray(int i, int j) const {
+	// Construct a camera ray originating from the origin and directed at randomly sampled
+	// point around the pixel location i, j.
+
+	auto offset = sample_square();
+	auto pixel_sample = pixel00_loc
+		+ ((i + offset.x()) * pixel_delta_u)
+		+ ((j + offset.y()) * pixel_delta_v);
+
+	auto ray_origin = center;
+	auto ray_direction = pixel_sample - ray_origin;
+
+	return ray(ray_origin, ray_direction);
+}
+
+vec3 GzRender::sample_square() const {
+	// Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+	return vec3(random_double() - 0.5, random_double() - 0.5, 0);
+}
 
 color GzRender::ray_color(const ray& r, int depth, const hittable& world) {
 	if (depth <= 0)
 		return color(0, 0, 0);
 
 	hit_record rec;
-	if (world.hit(r, 0, infinity, rec)) {
-		rec.normal.e[2] = -rec.normal.e[2]; //invert z to get a blue/purple color instead of red/green/yellow
-		//vec3 direction = random_on_hemisphere(rec.normal);
-		return 0.5 * (rec.normal + color(1, 1, 1));
+	if (world.hit(r, 0.001, infinity, rec)) {
+		auto phong_color = ComputePhongShading(rec);
+		ray reflected = ray(rec.p, unit_vector(reflect(r.direction(), rec.normal)));
+		return phong_color + rec.mat->kr * ray_color(reflected, depth - 1, world);
 	}
 
 	vec3 unit_direction = unit_vector(r.direction());
@@ -659,154 +635,42 @@ color GzRender::ray_color(const ray& r, int depth, const hittable& world) {
 	return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
 }
 
-//color GzRender::ray_color(const ray& r) {
-//	auto t = hit_sphere(point3(0, 0, -1), 0.5, r);
-//	if (t > 0.0) {
-//		vec3 N = unit_vector(r.at(t) - vec3(0, 0, -1));
-//		return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
-//	}
-//
-//	vec3 unit_direction = unit_vector(r.direction());
-//	auto a = 0.5 * (unit_direction.y() + 1.0);
-//	return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
-//}
-Vector3 GzRender::ray_color(Vector3 origin, Vector3 ray, int depth) {
-	// If we've exceeded the ray bounce limit, no more light is gathered.
-	if (depth <= 0)
-		return Vector3(0, 0, 0);
+vec3 GzRender::ComputePhongShading(const hit_record& rec) {
+	vec3 ks = rec.mat->ks;
+	vec3 kd = rec.mat->kd;
+	vec3 ka = rec.mat->ka;
+	vec3 ambientlight = vec3(this->ambientlight.color[0], this->ambientlight.color[1], this->ambientlight.color[2]);
+	vec3 E = vec3(0, 0, -1);
+	vec3 N = rec.normal;
 
-	int* triIndex = new int();
-	*triIndex = -1;
-	Vector3* intersectPos = new Vector3(0, 0, 0);
-	RayCast(origin, ray, triIndex, intersectPos);
-	if (*triIndex != -1) {
-		return ComputeShading(*triIndex, intersectPos, ray, depth);
-	}
-	delete intersectPos;
-	delete triIndex;
-	auto a = 0.5 * (ray.base[1] + 1.0);
-	return (1.0 - a) * Vector3(1.0, 1.0, 1.0) + a * Vector3(0.5, 0.7, 1.0);
-}
-
-void GzRender::RayCast(Vector3 origin, Vector3 direction, int* triangleIndex, Vector3* position) {
-	float dist = MAXINT;
-	for (int i = 0; i < numTriangles; ++i)
-	{
-		Triangle current = triangleList[i];
-		Vector3 normal = (current.GetPosition(1).Subtract(current.GetPosition(0)).Crossproduct(current.GetPosition(2).Subtract(current.GetPosition(0)))).Normalize();
-		Vector3 p = Vector3(0, 0, 0);
-
-		float currentMag = intersection(origin, direction, current.GetPosition(0), normal, &p);
-		Vector3 triangleCoords[] = {
-			current.GetPosition(0),
-			current.GetPosition(1),
-			current.GetPosition(2)
-		};
-		bool inTriangle = positionInTriangle(triangleCoords, p);
-
-		if (inTriangle && currentMag != -1 && currentMag < dist && currentMag > 0.001) {
-			for (int j = 0; j < 3; ++j) {
-				position->base[j] = p.base[j];
-			}
-			*triangleIndex = i;
-			dist = currentMag;
-		}
-	}
-}
-
-Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 ray, int depth) {
-	Triangle tri = this->triangleList[triIndex];
-	Vector3 coordData[] = { tri.GetPosition(0), tri.GetPosition(1) , tri.GetPosition(2) };
-	Vector3 normData[] = { tri.GetNorms(0), tri.GetNorms(1) , tri.GetNorms(2) };
-	Vector3 ks = tri.GetKs();
-	Vector3 kd = tri.GetKd();
-
-	Vector3 E = Vector3(0, 0, -1);
-	Vector3 N = interpolateVector3(coordData, *intersection, normData).Normalize();
-
-	GzColor baseColor = { 0,0,0 };
-	if (tri.useTexture) {
-		Vector3 uvData[] = { tri.GetUV(0), tri.GetUV(1) , tri.GetUV(2) };
-		Vector3 intersectionUV = interpolateVector3(coordData, *intersection, uvData);
-		this->tex_fun(intersectionUV.base[0], intersectionUV.base[1], baseColor);
-		tri.SetKa(baseColor[0], baseColor[1], baseColor[2]);
-		tri.SetKd(baseColor[0], baseColor[1], baseColor[2]);
-	}
-	/*else {
-		Vector3 kd = tri.GetKd();
-		baseColor[0] = kd.base[0];
-		baseColor[1] = kd.base[1];
-		baseColor[2] = kd.base[2];
-	}*/
-
-
-	Vector3 illumination(0, 0, 0);
-	Vector3 ka = tri.GetKa();
-	for (int i = 0; i < 3; ++i) {
-		illumination.base[i] = ka.base[i] * this->ambientlight.color[i];
-	}
-
-	// TODO - Reflection
-	// Recalculate reflective vector
-	Vector3 reflectionColor = { 0,0,0 };
-	if (tri.useReflectedIntensity) {
-		Vector3* intersect2 = new Vector3(0, 0, 0);
-		int* intersectIndex = new int();
-		*intersectIndex = -1;
-		if (depth > 0) {
-			ray = ray.Mult(-1);
-			float dot_RN = N.DotProduct(ray);
-			if (dot_RN < 0) {
-				N = N.Mult(-1);
-				dot_RN = N.DotProduct(ray);
-			}
-			Vector3 reflection = (N.Mult(2 * dot_RN)).Subtract(ray).Normalize();
-
-			reflectionColor = ray_color(*intersection, reflection, depth - 1);
-			/*RayCast(*intersection, reflection, intersectIndex, intersect2);
-			if (*intersectIndex != -1) {
-				reflectionColor = ComputeShading(*intersectIndex, intersect2, reflection, depth - 1);
-			}*/
-		}
-		delete intersectIndex;
-		delete intersect2;
-	}
+	vec3 specular = vec3(0, 0, 0);
+	vec3 diffuse = vec3(0, 0, 0);
+	vec3 ambient = ka * ambientlight; // Ambient color
 
 	for (int j = 0; j < this->numlights; ++j) {
-		Vector3 L = Vector3(this->lights[j].direction[0], this->lights[j].direction[1], this->lights[j].direction[2]);
-		L = L.Normalize();
-
-		float dot_NL = N.DotProduct(L);
-		float dot_NE = N.DotProduct(E);
+		vec3 L = unit_vector(vec3(this->lights[j].direction[0], this->lights[j].direction[1], this->lights[j].direction[2]));
+		vec3 lightColor = vec3(this->lights[j].color[0], this->lights[j].color[1], this->lights[j].color[2]);
+		float dot_NL = dot(N, L);
+		float dot_NE = dot(N, E);
 		if (dot_NL >= 0 && dot_NE >= 0) {}
 		else if (dot_NL < 0 && dot_NE < 0) {
-			N = N.Mult(-1);
-			dot_NL = N.DotProduct(L);
+			N = -N;
+			dot_NL = dot(N, L);
 		}
 		else {
 			continue;
 		}
 
-		Vector3 R = (N.Mult(2 * dot_NL)).Subtract(L).Normalize();
+		vec3 R = 2 * dot_NL * N - L;
 
-		float dot_RE = R.DotProduct(E);
+		float dot_RE = dot(R, E);
 		if (dot_RE < 0) dot_RE = 0;
 		else if (dot_RE > 1) dot_RE = 1;
 		if (dot_NL < 0) dot_NL = 0;
 		else if (dot_NL > 1) dot_NL = 1;
 
-		// TODO - HARD SHADOW
-		for (int i = 0; i < 3; ++i) {
-			illumination.base[i] += ks.base[i] * this->lights[j].color[i] * pow(dot_RE, this->spec);
-			illumination.base[i] += kd.base[i] * this->lights[j].color[i] * dot_NL;
-		}
+		specular += ks * lightColor * pow(dot_RE, this->spec);
+		diffuse += kd * lightColor * dot_NL;
 	}
-
-	// TODO - AREA LIGHT + SOFT SHADOW
-
-	Vector3 color(0, 0, 0);
-	for (int i = 0; i < 3; ++i) {
-		color.base[i] = illumination.base[i] + (1 - kd.base[i]) * reflectionColor.base[i];
-	}
-	return color;
+	return ambient + specular + diffuse;
 }

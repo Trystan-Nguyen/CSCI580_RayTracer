@@ -5,6 +5,7 @@
 #include "hittable_list.h"
 #include "sphere.h"
 #include "triangle.h"
+#include "material.h"
 
 #ifndef GZRENDER_
 #define GZRENDER_
@@ -25,7 +26,7 @@
 #define	MAX_LIGHTS	10		/* how many lights allowed */
 
 #define MAX_TRIANGLES 5000
-
+#define SAMPLES_PER_PIXEL 1
 class GzRender{			/* define a renderer */
   
 
@@ -106,5 +107,8 @@ public:
 	Vector3 ray_color(Vector3 origin, Vector3 ray, int depth);
 	Vector3 ray_color(const ray& r, int depth);
 	color ray_color(const ray& r, int depth, const hittable& world);
+	vec3 ComputePhongShading(const hit_record& rec);
+	ray get_ray(int i, int j) const;
+	vec3 sample_square() const;
 };
 #endif
