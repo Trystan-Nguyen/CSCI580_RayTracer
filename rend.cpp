@@ -165,9 +165,18 @@ GzRender::GzRender(int xRes, int yRes)
 		center - vec3(0, 0, -focal_length) - viewport_u / 2 - viewport_v / 2;
 	pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
-	auto phong_model = make_shared<material>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, 0.5);
-	world.add(make_shared<sphere>(point3(-3, 0, 4), 1, phong_model));
-	world.add(make_shared<sphere>(point3(0, -107.5, 1), 100, phong_model));
+	auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+	auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
+	auto material_left = make_shared<metal>(color(0.8, 0.8, 0.8));
+	auto material_right = make_shared<metal>(color(0.8, 0.6, 0.2));
+
+	world.add(make_shared<sphere>(point3(0.0, -100.5, 1.0), 100.0, material_ground));
+	world.add(make_shared<sphere>(point3(0.0, 0.0, 1.2), 0.5, material_center));
+	world.add(make_shared<sphere>(point3(-1.0, 0.0, 1.0), 0.5, material_left));
+	world.add(make_shared<sphere>(point3(1.0, 0.0, 1.0), 0.5, material_right));
+	//auto phong_model = make_shared<phong>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, color(0.5, 0.5, 0.5));
+	//world.add(make_shared<sphere>(point3(-3, 0, 4), 1, phong_model));
+	//world.add(make_shared<sphere>(point3(0, -107.5, 1), 100, phong_model));
 	//world.add(make_shared<triangle>(point3(0, -0.5, 1), point3(0, 0, 1), point3(0.5, -0.5, 1)));
 	//world.add(make_shared<triangle>(point3(-33.48, 2.28, 43.59), point3(-6.46, 32.5, 11.03), point3(35.13, 1.91, 17.15)));
 
@@ -570,15 +579,14 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 		}
 		}
 	}
-	auto phong_model = make_shared<material>(color(this->Kd[0], this->Kd[1], this->Kd[2]),
+	auto phong_model = make_shared<phong>(color(this->Kd[0], this->Kd[1], this->Kd[2]),
 										color(this->Ka[0], this->Ka[1], this->Ka[2]),
-										color(this->Ks[0], this->Ks[1], this->Ks[2]), this->spec, 0);
+										color(this->Ks[0], this->Ks[1], this->Ks[2]), this->spec, color(0, 0, 0));
 	if (numTriangles <= 2) {
-		phong_model = make_shared<material>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, 0.2);
+		phong_model = make_shared<phong>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, color(0.2, 0.2, 0.2));
 	}	
 
-	world.add(make_shared<triangle>(transformedCoords[0], transformedCoords[1], transformedCoords[2], 
-		transformedNorms[0], transformedNorms[1], transformedNorms[2], phong_model));
+	//world.add(make_shared<triangle>(transformedCoords[0], transformedCoords[1], transformedCoords[2], transformedNorms[0], transformedNorms[1], transformedNorms[2], phong_model));
 	numTriangles++;
 	return GZ_SUCCESS;
 }
@@ -591,7 +599,7 @@ void GzRender::RayTrace()
 			color pixel_color(0, 0, 0);
 			for (int sample = 0; sample < SAMPLES_PER_PIXEL; sample++) {
 				ray r = get_ray(i, j);
-				pixel_color += ray_color(r, 2, world);
+				pixel_color += ray_color(r, DEPTH, world);
 			}
 			GzPut(i, j, ctoi(pixel_color[0] / SAMPLES_PER_PIXEL), ctoi(pixel_color[1] / SAMPLES_PER_PIXEL), ctoi(pixel_color[2] / SAMPLES_PER_PIXEL), 1, 1);
 			
@@ -625,9 +633,14 @@ color GzRender::ray_color(const ray& r, int depth, const hittable& world) {
 
 	hit_record rec;
 	if (world.hit(r, 0.001, infinity, rec)) {
+		ray scattered;
+		color attenuation;
+		if (rec.mat->scatter(r, rec, attenuation, scattered))
+			return attenuation * ray_color(scattered, depth - 1, world);
+		auto phong_material = dynamic_pointer_cast<phong>(rec.mat);
 		auto phong_color = ComputePhongShading(rec);
-		ray reflected = ray(rec.p, unit_vector(reflect(r.direction(), rec.normal)));
-		return phong_color + rec.mat->kr * ray_color(reflected, depth - 1, world);
+		ray& reflected = scattered;
+		return phong_color + attenuation * ray_color(reflected, depth - 1, world);
 	}
 
 	vec3 unit_direction = unit_vector(r.direction());
@@ -636,9 +649,15 @@ color GzRender::ray_color(const ray& r, int depth, const hittable& world) {
 }
 
 vec3 GzRender::ComputePhongShading(const hit_record& rec) {
-	vec3 ks = rec.mat->ks;
-	vec3 kd = rec.mat->kd;
-	vec3 ka = rec.mat->ka;
+	auto phong_material = dynamic_pointer_cast<phong>(rec.mat);
+	vec3 ks, kd, ka;
+	float spec;
+	if (phong_material) {
+		ks = phong_material->getKs();
+		kd = phong_material->getKd();
+		ka = phong_material->getKa();
+		spec = phong_material->getShininess();
+	}
 	vec3 ambientlight = vec3(this->ambientlight.color[0], this->ambientlight.color[1], this->ambientlight.color[2]);
 	vec3 E = vec3(0, 0, -1);
 	vec3 N = rec.normal;
@@ -669,7 +688,7 @@ vec3 GzRender::ComputePhongShading(const hit_record& rec) {
 		if (dot_NL < 0) dot_NL = 0;
 		else if (dot_NL > 1) dot_NL = 1;
 
-		specular += ks * lightColor * pow(dot_RE, this->spec);
+		specular += ks * lightColor * pow(dot_RE, spec);
 		diffuse += kd * lightColor * dot_NL;
 	}
 	return ambient + specular + diffuse;

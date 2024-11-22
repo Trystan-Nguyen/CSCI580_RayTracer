@@ -12,7 +12,7 @@
 
 using std::make_shared;
 using std::shared_ptr;
-
+using std::dynamic_pointer_cast;
 // Constants
 
 const double infinity = std::numeric_limits<double>::infinity();
