@@ -4,6 +4,8 @@
 #define GZRENDER_
 
 
+#include <string>;
+
 /* Camera defaults */
 #define	DEFAULT_FOV		35.0
 #define	DEFAULT_IM_Z	(-10.0)  /* world coords for image plane origin */
@@ -88,6 +90,8 @@ public:
 	void GzRender::RayCast(Vector3* origin, Vector3 direction, int* triangleIndex, Vector3* position, int ignoreIndex = -1);
 	
 	Vector3 ComputeShading(int triIndex, Vector3* intersection, Vector3 E, int depth);
+
+	std::string textureName = "-1";
 
 };
 #endif

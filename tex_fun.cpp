@@ -4,22 +4,54 @@
 #include	"Gz.h"
 #include    "MathUtil.h"
 
+# include <string>
+# include <map>
+using namespace std;
+
+struct xyRes {
+    int x;
+    int y;
+};
+
+map<string, GzColor*> textureMap_map = map<string, GzColor*>();
+map<string, xyRes> textureRes_map = map<string, xyRes>();
+string currentTexture = "";
 GzColor	*image=NULL;
 int xs, ys;
 int reset = 1;
 inline int ARRAY(int x, int y) { return (x + y * xs); }
 
 /* Image texture function */
-int tex_fun(float u, float v, GzColor color)
+int tex_fun(float u, float y, GzColor color, string textureName)
 {
+    //float u = 1.0 - x;
+    float v = 1.0 - y;
+
   unsigned char		pixel[3];
   unsigned char     dummy;
   char  		foo[8];
   int   		i, j;
   FILE			*fd;
 
+  if (currentTexture != textureName) {
+      if (image != NULL && textureMap_map.find(currentTexture) == textureMap_map.end()) {
+          textureMap_map[currentTexture] = image;
+          textureRes_map[currentTexture] = { xs, ys };
+          image = NULL;
+      }
+      currentTexture = textureName;
+      if (textureMap_map.find(currentTexture) == textureMap_map.end()) {
+          reset = 1;
+      }
+      else {
+          image = textureMap_map[currentTexture];
+          xs = textureRes_map[currentTexture].x;
+          ys = textureRes_map[currentTexture].y;
+      }
+  }
+
   if (reset) {          /* open and load texture file */
-    fd = fopen ("texture", "rb");
+    fd = fopen (textureName.c_str(), "rb");
     if (fd == NULL) {
       fprintf (stderr, "texture file not found\n");
       exit(-1);

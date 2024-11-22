@@ -12,6 +12,9 @@
 #include "Gz.h"
 #include "rend.h"
 
+#include <string>
+using namespace std;
+
 #ifdef _DEBUG
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
@@ -27,7 +30,7 @@ static char THIS_FILE[] = __FILE__;
 #define OUTFILE "output.ppm"
 
 
-extern int tex_fun(float u, float v, GzColor color); /* image texture function */
+extern int tex_fun(float u, float v, GzColor color, string texName); /* image texture function */
 extern int ptex_fun(float u, float v, GzColor color); /* procedural texture function */
 extern int GzFreeTexture();
 
@@ -81,25 +84,35 @@ int Application5::Initialize()
 	/* Translation matrix */
 	GzMatrix	scale =
 	{
-		3.25,	0.0,	0.0,	0.0,
-		0.0,	3.25,	0.0,	-3.25,
-		0.0,	0.0,	3.25,	3.5,
+		0.5,	0.0,	0.0,	7,
+		0.0,	0.5,	0.0,	7,
+		0.0,	0.0,	0.5,	10,
 		0.0,	0.0,	0.0,	1.0
 	};
 
 	GzMatrix	rotateX =
 	{
 		1.0,	0.0,	0.0,	0.0,
-		0.0,	-0.5,	.866,	0.0,
-		0.0,	-.866,	-0.5,	0.0,
+		0.0,	.7071,	.7071,	0.0,
+		0.0,	-.7071,	.7071,	0.0,
 		0.0,	0.0,	0.0,	1.0
 	};
 
+	float radY = (9.75 / 8.0) * 3.14159;
 	GzMatrix	rotateY =
 	{
-		.866,	0.0,	-0.5,	0.0,
-		0.0,	1.0,	0.0,	0.0,
-		0.5,	0.0,	.866,	0.0,
+		cos(radY),	0.0,	sin(radY),	0.0,
+		0.0,		1.0,	0.0,		0.0,
+		-sin(radY),	0.0,	cos(radY),	0.0,
+		0.0,		0.0,	0.0,		1.0
+	};
+
+	float radZ = (3.0 / 4.0) * 3.14159;
+	GzMatrix	rotateZ =
+	{
+		cos(radZ),	-sin(radZ),	0.0,	0.0,
+		sin(radZ),	cos(radZ),	0.0,	0.0,
+		0.0,	0.0,	1.0,	0.0,
 		0.0,	0.0,	0.0,	1.0
 	};
 
@@ -125,13 +138,10 @@ int Application5::Initialize()
 	status |= m_pRender->GzBeginRender();
 
 	/* Light */
-	/*GzLight	light1 = { {-0.7071, 0.7071, 0}, {0.5, 0.5, 0.9} };
-	GzLight	light2 = { {0, -0.7071, -0.7071}, {0.9, 0.2, 0.3} };
-	GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.2, 0.7, 0.3} };*/
-	GzLight	light1 = { {-0.7071, 0.7071, 0}, {0.05, 0.25, 0.2} };
-	GzLight	light2 = { {0, -0.7071, -0.7071}, {0.25, 0.2, 0.05} };
-	GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.2, 0.05, 0.25} };
-	GzLight	ambientlight = { {0, 0, 0}, {0.1, 0.1, 0.1} };
+	GzLight	light1 = { {-1, 0, 0}, {0.9, 0.9, 0.9} };
+	GzLight	light2 = { {0, -0.7071, -0.7071}, {0.0, 0.0, 0.0} };
+	GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.0, 0.0, 0.0} };
+	GzLight	ambientlight = { {0, 0, 0}, {0.9, 0.9, 0.9} };
 
 	/* Material property */
 	GzColor specularCoefficient = { 0.3, 0.3, 0.3 };
@@ -183,15 +193,16 @@ int Application5::Initialize()
 #if 0   /* set up null texture function or valid pointer */
 	valueListShader[5] = (GzPointer)0;
 #else
-	//valueListShader[5] = (GzPointer)(tex_fun);	/* or use ptex_fun */
-	valueListShader[5] = (GzPointer)(ptex_fun);	/* or use ptex_fun */
+	valueListShader[5] = (GzPointer)(tex_fun);	/* or use ptex_fun */
+	//valueListShader[5] = (GzPointer)(ptex_fun);	/* or use ptex_fun */
 #endif
 	status |= m_pRender->GzPutAttribute(6, nameListShader, valueListShader);
 
 
 	status |= m_pRender->GzPushMatrix(scale);
-	//status |= m_pRender->GzPushMatrix(rotateY); 
-	status |= m_pRender->GzPushMatrix(rotateX);
+	status |= m_pRender->GzPushMatrix(rotateY); 
+	//status |= m_pRender->GzPushMatrix(rotateX);
+	//status |= m_pRender->GzPushMatrix(rotateZ);
 
 	if (status) exit(GZ_FAILURE);
 
@@ -223,72 +234,103 @@ int Application5::Render()
 	nameListTriangle[2] = GZ_TEXTURE_INDEX;
 
 	// I/O File open
-	FILE* infile;
-	if ((infile = fopen(INFILE, "r")) == NULL)
-	{
-		AfxMessageBox("The input file was not opened\n");
-		return GZ_FAILURE;
-	}
 
-	FILE* outfile;
-	if ((outfile = fopen(OUTFILE, "wb")) == NULL)
-	{
-		AfxMessageBox("The output file was not opened\n");
-		return GZ_FAILURE;
-	}
+	//------------------------------------------------------------------------------------------------------------------------------
+	int numFiles = 1;
+	string infiles[] = {"duck.asc"};
+	string inTexures[] = {"duckTex.ppm"};
+	GzMatrix	modelTransform[] = {
+		{
+			1.0,	0.0,	0.0,	0.0,
+			0.0,	1.0,	0.0,	0.0,
+			0.0,	0.0,	1.0,	0.0,
+			0.0,	0.0,	0.0,	1.0
+		}
+	};
 
-	/*
-	* Walk through the list of triangles, set color
-	* and render each triangle
-	*/
-	while (fscanf(infile, "%s", dummy) == 1) { 	/* read in tri word */
-		fscanf(infile, "%f %f %f %f %f %f %f %f",
-			&(vertexList[0][0]), &(vertexList[0][1]),
-			&(vertexList[0][2]),
-			&(normalList[0][0]), &(normalList[0][1]),
-			&(normalList[0][2]),
-			&(uvList[0][0]), &(uvList[0][1]));
-		fscanf(infile, "%f %f %f %f %f %f %f %f",
-			&(vertexList[1][0]), &(vertexList[1][1]),
-			&(vertexList[1][2]),
-			&(normalList[1][0]), &(normalList[1][1]),
-			&(normalList[1][2]),
-			&(uvList[1][0]), &(uvList[1][1]));
-		fscanf(infile, "%f %f %f %f %f %f %f %f",
-			&(vertexList[2][0]), &(vertexList[2][1]),
-			&(vertexList[2][2]),
-			&(normalList[2][0]), &(normalList[2][1]),
-			&(normalList[2][2]),
-			&(uvList[2][0]), &(uvList[2][1]));
+
+	
+
+	for(int i = 0; i < numFiles; ++i) {
+		FILE* infile;
+		if ((infile = fopen(infiles[i].c_str(), "r")) == NULL)
+		{
+			AfxMessageBox("The input file was not opened\n");
+			return GZ_FAILURE;
+		}
+
+		FILE* outfile;
+		if ((outfile = fopen(OUTFILE, "wb")) == NULL)
+		{
+			AfxMessageBox("The output file was not opened\n");
+			return GZ_FAILURE;
+		}
+
+
+
+		GzToken		nameList[1];
+		nameList[0] = GZ_TEXTURE_NAME;
+		GzPointer   valueListShader[1];
+		valueListShader[0] = &inTexures[i];
+
+		//status |= m_pRender->GzPushMatrix(modelTransform[i]);
+		status |= m_pRender->GzPutAttribute(1, nameList, valueListShader);
 
 		/*
-		 * Set the value pointers to the first vertex of the
-		 * triangle, then feed it to the renderer
-		 * NOTE: this sequence matches the nameList token sequence
+		* Walk through the list of triangles, set color
+		* and render each triangle
+		*/
+		while (fscanf(infile, "%s", dummy) == 1) { 	/* read in tri word */
+			fscanf(infile, "%f %f %f %f %f %f %f %f",
+				&(vertexList[0][0]), &(vertexList[0][1]),
+				&(vertexList[0][2]),
+				&(normalList[0][0]), &(normalList[0][1]),
+				&(normalList[0][2]),
+				&(uvList[0][0]), &(uvList[0][1]));
+			fscanf(infile, "%f %f %f %f %f %f %f %f",
+				&(vertexList[1][0]), &(vertexList[1][1]),
+				&(vertexList[1][2]),
+				&(normalList[1][0]), &(normalList[1][1]),
+				&(normalList[1][2]),
+				&(uvList[1][0]), &(uvList[1][1]));
+			fscanf(infile, "%f %f %f %f %f %f %f %f",
+				&(vertexList[2][0]), &(vertexList[2][1]),
+				&(vertexList[2][2]),
+				&(normalList[2][0]), &(normalList[2][1]),
+				&(normalList[2][2]),
+				&(uvList[2][0]), &(uvList[2][1]));
+
+			/*
+			 * Set the value pointers to the first vertex of the
+			 * triangle, then feed it to the renderer
+			 * NOTE: this sequence matches the nameList token sequence
+			 */
+			valueListTriangle[0] = (GzPointer)vertexList;
+			valueListTriangle[1] = (GzPointer)normalList;
+			valueListTriangle[2] = (GzPointer)uvList;
+			m_pRender->GzPutTriangle(3, nameListTriangle, valueListTriangle);
+
+			//status |= m_pRender->GzPopMatrix();
+		}
+
+		m_pRender->GzFlushDisplay2File(outfile); 	/* write out or update display to file*/
+		m_pRender->GzFlushDisplay2FrameBuffer();	// write out or update display to frame buffer
+
+		/*
+		 * Close file
 		 */
-		valueListTriangle[0] = (GzPointer)vertexList;
-		valueListTriangle[1] = (GzPointer)normalList;
-		valueListTriangle[2] = (GzPointer)uvList;
-		m_pRender->GzPutTriangle(3, nameListTriangle, valueListTriangle);
+
+		if (fclose(infile))
+			AfxMessageBox(_T("The input file was not closed\n"));
+
+		if (fclose(outfile))
+			AfxMessageBox(_T("The output file was not closed\n"));
+
+		if (status)
+			return(GZ_FAILURE);
+		else
+			return(GZ_SUCCESS);
 	}
-
-	m_pRender->GzFlushDisplay2File(outfile); 	/* write out or update display to file*/
-	m_pRender->GzFlushDisplay2FrameBuffer();	// write out or update display to frame buffer
-
-	/*
-	 * Close file
-	 */
-
-	if (fclose(infile))
-		AfxMessageBox(_T("The input file was not closed\n"));
-
-	if (fclose(outfile))
-		AfxMessageBox(_T("The output file was not closed\n"));
-
-	if (status)
-		return(GZ_FAILURE);
-	else
-		return(GZ_SUCCESS);
 }
 
 int Application5::Clean()

@@ -2,6 +2,8 @@
  * Gz.h - include file for the cs580 rendering library
  */
 
+#include <string>
+
 /*
  * universal constants
  */
@@ -31,6 +33,8 @@
 
 #define	GZ_TEXTURE_MAP	1010		/* texture function ptr */
 
+#define GZ_TEXTURE_NAME 2000
+
 /*
  * value-list attributes
  */
@@ -49,7 +53,7 @@ typedef float	GzTextureIndex[2];
 typedef float	GzMatrix[4][4];
 typedef int	GzDepth;		/* signed z for clipping */
 
-typedef	int	(*GzTexture)(float u, float v, GzColor color);	/* pointer to texture lookup method */
+typedef	int	(*GzTexture)(float u, float v, GzColor color, std::string texName);	/* pointer to texture lookup method */
 /* u,v parameters [0,1] are defined tex_fun(float u, float v, GzColor color) */
 
 /*
