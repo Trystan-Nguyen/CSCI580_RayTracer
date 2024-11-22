@@ -167,16 +167,16 @@ GzRender::GzRender(int xRes, int yRes)
 
 	auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
 	auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-	auto material_left = make_shared<metal>(color(0.8, 0.8, 0.8));
-	auto material_right = make_shared<metal>(color(0.8, 0.6, 0.2));
+	auto material_left = make_shared<metal>(color(0.8, 0.8, 0.8), 0.3);
+	auto material_right = make_shared<metal>(color(0.8, 0.6, 0.2), 0);
 
-	world.add(make_shared<sphere>(point3(0.0, -100.5, 1.0), 100.0, material_ground));
+	//world.add(make_shared<sphere>(point3(0.0, -100.5, 1.0), 100.0, material_ground));
 	world.add(make_shared<sphere>(point3(0.0, 0.0, 1.2), 0.5, material_center));
-	world.add(make_shared<sphere>(point3(-1.0, 0.0, 1.0), 0.5, material_left));
+	//world.add(make_shared<sphere>(point3(-1.0, 0.0, 1.0), 0.5, material_left));
 	world.add(make_shared<sphere>(point3(1.0, 0.0, 1.0), 0.5, material_right));
-	//auto phong_model = make_shared<phong>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, color(0.5, 0.5, 0.5));
-	//world.add(make_shared<sphere>(point3(-3, 0, 4), 1, phong_model));
-	//world.add(make_shared<sphere>(point3(0, -107.5, 1), 100, phong_model));
+	auto phong_model = make_shared<phong>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, color(0.5, 0.5, 0.5), 0.3);
+	world.add(make_shared<sphere>(point3(-3, 0, 4), 1, phong_model));
+	world.add(make_shared<sphere>(point3(0, -107.5, 1), 100, phong_model));
 	//world.add(make_shared<triangle>(point3(0, -0.5, 1), point3(0, 0, 1), point3(0.5, -0.5, 1)));
 	//world.add(make_shared<triangle>(point3(-33.48, 2.28, 43.59), point3(-6.46, 32.5, 11.03), point3(35.13, 1.91, 17.15)));
 
@@ -651,7 +651,7 @@ color GzRender::ray_color(const ray& r, int depth, const hittable& world) {
 vec3 GzRender::ComputePhongShading(const hit_record& rec) {
 	auto phong_material = dynamic_pointer_cast<phong>(rec.mat);
 	vec3 ks, kd, ka;
-	float spec;
+	float spec = 0;
 	if (phong_material) {
 		ks = phong_material->getKs();
 		kd = phong_material->getKd();

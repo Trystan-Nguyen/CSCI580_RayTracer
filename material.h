@@ -37,29 +37,32 @@ private:
 
 class metal : public material {
 public:
-    metal(const color& albedo) : albedo(albedo) {}
+    metal(const color& albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1 ? fuzz : 1) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
         vec3 reflected = reflect(r_in.direction(), rec.normal);
+        reflected = unit_vector(reflected) + (fuzz * random_unit_vector());
         scattered = ray(rec.p, reflected);
         attenuation = albedo;
-        return true;
+        return (dot(scattered.direction(), rec.normal) > 0);
     }
 
 private:
     color albedo;
+    double fuzz;
 };
 
 
 class phong : public material {
 public:
-    phong(const color& kd, const color& ka, const color& ks, float shininess, const color& kr)
-        : kd(kd), ka(ka), ks(ks), shininess(shininess), kr(kr) {}
+    phong(const color& kd, const color& ka, const color& ks, float shininess, const color& kr, double fuzz = 0)
+        : kd(kd), ka(ka), ks(ks), shininess(shininess), kr(kr), fuzz(fuzz < 1 ? fuzz : 1) {}
 
     bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered)
         const override {
         vec3 reflected = reflect(r_in.direction(), rec.normal);
+        reflected = unit_vector(reflected) + (fuzz * random_unit_vector());
         scattered = ray(rec.p, reflected);
         attenuation = albedo;
         return false;
@@ -78,5 +81,6 @@ private:
     color ks;
     float shininess;
     color kr;
+    double fuzz;
 };
 #endif
