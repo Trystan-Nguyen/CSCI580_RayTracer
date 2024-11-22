@@ -2,6 +2,7 @@
 
 #include	"Gz.h"
 #include <cstdlib>
+#include <string>
 
 class Vector3
 {
@@ -66,6 +67,7 @@ class Triangle
 public:
 	float* data;
 	bool useTexture = false;
+	std::string textureName = "_0";
 	Triangle::Triangle() {
 		data = new float[37]();
 	}

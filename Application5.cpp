@@ -236,10 +236,35 @@ int Application5::Render()
 	// I/O File open
 
 	//------------------------------------------------------------------------------------------------------------------------------
-	int numFiles = 1;
-	string infiles[] = {"duck.asc"};
-	string inTexures[] = {"duckTex.ppm"};
+	// ADD FILES
+	int numFiles = 5;
+	string infiles[] = {"duck.asc", "duck.asc" , "duck.asc", "duck.asc", "ppot.asc" };
+	string inTexures[] = {"duckTex.ppm", "duckTex.ppm" ,"duckTex.ppm" ,"duckTex.ppm", "_1"};
 	GzMatrix	modelTransform[] = {
+		{
+			1.0,	0.0,	0.0,	0.0,
+			0.0,	1.0,	0.0,	0.0,
+			0.0,	0.0,	1.0,	0.0,
+			0.0,	0.0,	0.0,	1.0
+		},
+		{
+			1.0,	0.0,	0.0,	0.0,
+			0.0,	1.0,	0.0,	0.0,
+			0.0,	0.0,	1.0,	0.0,
+			0.0,	0.0,	0.0,	1.0
+		},
+		{
+			1.0,	0.0,	0.0,	0.0,
+			0.0,	1.0,	0.0,	0.0,
+			0.0,	0.0,	1.0,	0.0,
+			0.0,	0.0,	0.0,	1.0
+		},
+		{
+			1.0,	0.0,	0.0,	0.0,
+			0.0,	1.0,	0.0,	0.0,
+			0.0,	0.0,	1.0,	0.0,
+			0.0,	0.0,	0.0,	1.0
+		},
 		{
 			1.0,	0.0,	0.0,	0.0,
 			0.0,	1.0,	0.0,	0.0,
@@ -250,7 +275,7 @@ int Application5::Render()
 
 
 	
-
+	
 	for(int i = 0; i < numFiles; ++i) {
 		FILE* infile;
 		if ((infile = fopen(infiles[i].c_str(), "r")) == NULL)
@@ -259,22 +284,13 @@ int Application5::Render()
 			return GZ_FAILURE;
 		}
 
-		FILE* outfile;
-		if ((outfile = fopen(OUTFILE, "wb")) == NULL)
-		{
-			AfxMessageBox("The output file was not opened\n");
-			return GZ_FAILURE;
-		}
-
-
-
 		GzToken		nameList[1];
 		nameList[0] = GZ_TEXTURE_NAME;
 		GzPointer   valueListShader[1];
 		valueListShader[0] = &inTexures[i];
 
-		//status |= m_pRender->GzPushMatrix(modelTransform[i]);
 		status |= m_pRender->GzPutAttribute(1, nameList, valueListShader);
+		status |= m_pRender->GzPushMatrix(modelTransform[i]);
 
 		/*
 		* Walk through the list of triangles, set color
@@ -300,37 +316,38 @@ int Application5::Render()
 				&(normalList[2][2]),
 				&(uvList[2][0]), &(uvList[2][1]));
 
-			/*
-			 * Set the value pointers to the first vertex of the
-			 * triangle, then feed it to the renderer
-			 * NOTE: this sequence matches the nameList token sequence
-			 */
+
 			valueListTriangle[0] = (GzPointer)vertexList;
 			valueListTriangle[1] = (GzPointer)normalList;
 			valueListTriangle[2] = (GzPointer)uvList;
 			m_pRender->GzPutTriangle(3, nameListTriangle, valueListTriangle);
-
-			//status |= m_pRender->GzPopMatrix();
 		}
-
-		m_pRender->GzFlushDisplay2File(outfile); 	/* write out or update display to file*/
-		m_pRender->GzFlushDisplay2FrameBuffer();	// write out or update display to frame buffer
-
-		/*
-		 * Close file
-		 */
-
+		
 		if (fclose(infile))
 			AfxMessageBox(_T("The input file was not closed\n"));
 
-		if (fclose(outfile))
-			AfxMessageBox(_T("The output file was not closed\n"));
-
-		if (status)
-			return(GZ_FAILURE);
-		else
-			return(GZ_SUCCESS);
+		status |= m_pRender->GzPopMatrix();
 	}
+
+
+
+	FILE* outfile;
+	if ((outfile = fopen(OUTFILE, "wb")) == NULL)
+	{
+		AfxMessageBox("The output file was not opened\n");
+		return GZ_FAILURE;
+	}
+
+	m_pRender->GzFlushDisplay2File(outfile); 	/* write out or update display to file*/
+	m_pRender->GzFlushDisplay2FrameBuffer();	// write out or update display to frame buffer
+
+	if (fclose(outfile))
+		AfxMessageBox(_T("The output file was not closed\n"));
+
+	if (status)
+		return(GZ_FAILURE);
+	else
+		return(GZ_SUCCESS);
 }
 
 int Application5::Clean()

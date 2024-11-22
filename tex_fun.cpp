@@ -24,7 +24,7 @@ inline int ARRAY(int x, int y) { return (x + y * xs); }
 /* Image texture function */
 int tex_fun(float u, float y, GzColor color, string textureName)
 {
-    //float u = 1.0 - x;
+    // REMOVE ME and replace input y as v
     float v = 1.0 - y;
 
   unsigned char		pixel[3];

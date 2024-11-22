@@ -446,6 +446,8 @@ int GzRender::GzPutAttribute(int numAttributes, GzToken* nameList, GzPointer* va
 		{
 			GzPointer val = (GzPointer)valueList[i];
 			textureName = *(std::string*)val;
+			if (textureName[0] == '_') useTexture = false;
+			else useTexture = true;
 			break;
 		}
 
@@ -564,6 +566,27 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 	tri.SetKs(this->Ks[0], this->Ks[1], this->Ks[2]);
 	tri.SetSpec(this->spec);
 
+	if (useTexture) {
+		tri.useTexture = true;
+		tri.textureName = textureName;
+	}
+	else {
+		tri.useTexture = false;
+		switch (textureName[1])
+		{
+		case '1':
+			tri.SetKd(0.828125, 0.78515625, 0.7109375);
+			tri.SetKa(0.828125, 0.78515625, 0.7109375);
+			tri.SetKs(0.828125, 0.78515625, 0.7109375);
+			break;
+
+		default:
+			tri.SetKa(this->Ka[0], this->Ka[1], this->Ka[2]);
+			tri.SetKd(this->Kd[0], this->Kd[1], this->Kd[2]);
+			tri.SetKs(this->Ks[0], this->Ks[1], this->Ks[2]);
+		}
+	}
+
 	triangleList[numTriangles++] = tri;
 
 	return GZ_SUCCESS;
@@ -591,10 +614,6 @@ bool useAntiAlias = false;
 
 // Change based on what you are trying to do
 void configureObject(GzRender* self) {
-	for (int i = 0; i < self->numTriangles; ++i)
-	{
-		self->triangleList[i].useTexture = true;
-	}
 	self->numlights = 0;
 
 	/*
@@ -722,7 +741,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 	if (tri.useTexture) {
 		Vector3 uvData[] = { tri.GetUV(0), tri.GetUV(1) , tri.GetUV(2) };
 		Vector3 intersectionUV = interpolateVector3(coordData, *intersection, uvData);
-		this->tex_fun(intersectionUV.base[0], intersectionUV.base[1], baseColor, textureName);
+		this->tex_fun(intersectionUV.base[0], intersectionUV.base[1], baseColor, tri.textureName);
 	}
 	else {
 		Vector3 kd = tri.GetKd();

@@ -20,7 +20,7 @@
 #define	MATLEVELS	100		/* how many matrix pushes allowed */
 #define	MAX_LIGHTS	10		/* how many lights allowed */
 
-#define MAX_TRIANGLES 5000
+#define MAX_TRIANGLES 145000
 #define SAMPLES_PER_PIXEL 16 // Count of random samples for each pixel
 class GzRender{			/* define a renderer */
   
@@ -92,6 +92,7 @@ public:
 	Vector3 ComputeShading(int triIndex, Vector3* intersection, Vector3 E, int depth);
 
 	std::string textureName = "-1";
+	bool useTexture = false;
 
 };
 #endif
