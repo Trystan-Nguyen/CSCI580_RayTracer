@@ -5,7 +5,7 @@
 #include	"math.h"
 #include	"Gz.h"
 #include	"rend.h"
-#include	"rt.h"
+//#include	"rt.h"
 #include <cstdlib>
 
 #define PI (float) 3.14159265358979323846
@@ -165,9 +165,11 @@ GzRender::GzRender(int xRes, int yRes)
 		center - vec3(0, 0, -focal_length) - viewport_u / 2 - viewport_v / 2;
 	pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
-	//world.add(make_shared<sphere>(point3(0, 0, 1), 0.5));
-	world.add(make_shared<sphere>(point3(0, -100.5, 1), 100));
-	//world.add(make_shared<triangle>(point3(0, 0, 1), point3(0, 0.5, 1), point3(0.5, 0, 1)));
+	//world.add(make_shared<sphere>(point3(0.7, 0, 1), 0.3));
+	//world.add(make_shared<sphere>(point3(0, -100.5, 1), 100));
+	//world.add(make_shared<triangle>(point3(0, -0.5, 1), point3(0, 0, 1), point3(0.5, -0.5, 1)));
+	//world.add(make_shared<triangle>(point3(-33.48, 2.28, 43.59), point3(-6.46, 32.5, 11.03), point3(35.13, 1.91, 17.15)));
+
 }
 
 GzRender::~GzRender()
@@ -504,8 +506,8 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 	vec3 transformedCoords[] = {
 		vec3(0,0,0), vec3(0,0,0), vec3(0,0,0)
 	};
-	Vector3 transformedNorms[] = {
-		Vector3(0,0,0), Vector3(0,0,0), Vector3(0,0,0)
+	vec3 transformedNorms[] = {
+		vec3(0,0,0), vec3(0,0,0), vec3(0,0,0)
 	};
 	Vector3 UVCoords[] = {
 		Vector3(0,0,0), Vector3(0,0,0), Vector3(0,0,0)
@@ -543,7 +545,7 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 				Vector4 input = Vector4(norms[3 * j + 0], norms[3 * j + 1], norms[3 * j + 2], 1);
 				Vector4 result = MatrixMult(Xnorm[matlevel], input);
 
-				transformedNorms[j] = result.ToVector3().Normalize();
+				transformedNorms[j] = unit_vector(result.ToVec3());
 			}
 			break;
 		}
@@ -568,25 +570,26 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 		}
 	}
 
-	world.add(make_shared<triangle>(transformedCoords[0], transformedCoords[1], transformedCoords[2]));
+	world.add(make_shared<triangle>(transformedCoords[0], transformedCoords[1], transformedCoords[2], 
+		transformedNorms[0], transformedNorms[1], transformedNorms[2]));
 
-	Triangle tri = Triangle();
-	for (int i = 0; i < 3; ++i) {
-		//tri.SetPositions(i, transformedCoords[i]);
-		tri.SetNorms(i, transformedNorms[i]);
-		tri.SetUV(i, UVCoords[i]);
-	}
-	// TODO - Material specific parameters
-	tri.SetKa(this->Ka[0], this->Ka[1], this->Ka[2]);
-	tri.SetKd(this->Kd[0], this->Kd[1], this->Kd[2]);
-	tri.SetKs(this->Ks[0], this->Ks[1], this->Ks[2]);
-	tri.SetSpec(this->spec);
+	//Triangle tri = Triangle();
+	//for (int i = 0; i < 3; ++i) {
+	//	tri.SetPositions(i, transformedCoords[i]);
+	//	tri.SetNorms(i, transformedNorms[i]);
+	//	tri.SetUV(i, UVCoords[i]);
+	//}
+	//// TODO - Material specific parameters
+	//tri.SetKa(this->Ka[0], this->Ka[1], this->Ka[2]);
+	//tri.SetKd(this->Kd[0], this->Kd[1], this->Kd[2]);
+	//tri.SetKs(this->Ks[0], this->Ks[1], this->Ks[2]);
+	//tri.SetSpec(this->spec);
 
-	triangleList[numTriangles++] = tri;
+	//triangleList[numTriangles++] = tri;
 
-	float u_test = tri.data[18 + (3 * 0) + 0];
-	float v_test = tri.data[18 + (3 * 0) + 1];
-	Vector3 a = tri.GetUV(0);
+	//float u_test = tri.data[18 + (3 * 0) + 0];
+	//float v_test = tri.data[18 + (3 * 0) + 1];
+	//Vector3 a = tri.GetUV(0);
 
 	return GZ_SUCCESS;
 }
@@ -632,33 +635,22 @@ void GzRender::RayTrace()
 			auto ray_direction = pixel_center - center;
 			ray r(center, ray_direction);
 
-			color pixel_color = ray_color(r, world);
+			color pixel_color = ray_color(r, 2, world);
 			GzPut(i, j, ctoi(pixel_color[0]), ctoi(pixel_color[1]), ctoi(pixel_color[2]), 1, 1);
 			
 		}
 	}
 }
 
-double hit_sphere(const point3& center, double radius, const ray& r) {
-	vec3 oc = center - r.origin();
-	auto a = dot(r.direction(), r.direction());
-	auto b = -2.0 * dot(r.direction(), oc);
-	auto c = dot(oc, oc) - radius * radius;
-	auto discriminant = b * b - 4 * a * c;
 
-	if (discriminant < 0) {
-		return -1.0;
-	}
-	else {
-		return (-b - std::sqrt(discriminant)) / (2.0 * a);
-	}
-}
+color GzRender::ray_color(const ray& r, int depth, const hittable& world) {
+	if (depth <= 0)
+		return color(0, 0, 0);
 
-
-color GzRender::ray_color(const ray& r, const hittable& world) {
 	hit_record rec;
 	if (world.hit(r, 0, infinity, rec)) {
 		rec.normal.e[2] = -rec.normal.e[2]; //invert z to get a blue/purple color instead of red/green/yellow
+		//vec3 direction = random_on_hemisphere(rec.normal);
 		return 0.5 * (rec.normal + color(1, 1, 1));
 	}
 

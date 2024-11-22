@@ -105,6 +105,6 @@ public:
 	Vector3 ComputeShading(int triIndex, Vector3* intersection, Vector3 ray, int depth);
 	Vector3 ray_color(Vector3 origin, Vector3 ray, int depth);
 	Vector3 ray_color(const ray& r, int depth);
-	color ray_color(const ray& r, const hittable& world);
+	color ray_color(const ray& r, int depth, const hittable& world);
 };
 #endif
