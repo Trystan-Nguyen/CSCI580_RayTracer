@@ -21,7 +21,7 @@
 #define	MAX_LIGHTS	10		/* how many lights allowed */
 
 #define MAX_TRIANGLES 145000
-#define SAMPLES_PER_PIXEL 16 // Count of random samples for each pixel
+#define SAMPLES_PER_PIXEL 9 // Count of random samples for each pixel
 class GzRender{			/* define a renderer */
   
 

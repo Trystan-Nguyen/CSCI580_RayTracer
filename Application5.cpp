@@ -73,8 +73,8 @@ int Application5::Initialize()
 	/*
 	 * initialize the display and the renderer
 	 */
-	m_nWidth = 256;		// frame buffer and display width
-	m_nHeight = 256;    // frame buffer and display height
+	m_nWidth = 512;		// frame buffer and display width
+	m_nHeight = 512;    // frame buffer and display height
 
 	m_pRender = new GzRender(m_nWidth, m_nHeight);
 	m_pRender->GzDefault();
@@ -125,7 +125,7 @@ int Application5::Initialize()
 	camera.lookat[Y] = 0;
 	camera.lookat[Z] = 0;
 
-	camera.worldup[X] = -0;
+	camera.worldup[X] = 0.0;
 	camera.worldup[Y] = 1.0;
 	camera.worldup[Z] = 0.0;
 
@@ -138,10 +138,10 @@ int Application5::Initialize()
 	status |= m_pRender->GzBeginRender();
 
 	/* Light */
-	GzLight	light1 = { {-1, 0, 0}, {0.9, 0.9, 0.9} };
+	GzLight	light1 = { {-1, 0, 0}, {0.4, 0.4, 0.4} };
 	GzLight	light2 = { {0, -0.7071, -0.7071}, {0.0, 0.0, 0.0} };
 	GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.0, 0.0, 0.0} };
-	GzLight	ambientlight = { {0, 0, 0}, {0.9, 0.9, 0.9} };
+	GzLight	ambientlight = { {0, 0, 0}, {0.1, 0.1, 0.1} };
 
 	/* Material property */
 	GzColor specularCoefficient = { 0.3, 0.3, 0.3 };
@@ -237,9 +237,9 @@ int Application5::Render()
 
 	//------------------------------------------------------------------------------------------------------------------------------
 	// ADD FILES
-	int numFiles = 5;
-	string infiles[] = {"duck.asc", "duck.asc" , "duck.asc", "duck.asc", "ppot.asc" };
-	string inTexures[] = {"duckTex.ppm", "duckTex.ppm" ,"duckTex.ppm" ,"duckTex.ppm", "_1"};
+	int numFiles = 3;
+	string infiles[] = {"duck.asc", "duck.asc", "ppot.asc" };
+	string inTexures[] = {"duckTex.ppm", "duckTex.ppm", "_1"};
 	GzMatrix	modelTransform[] = {
 		{
 			1.0,	0.0,	0.0,	0.0,

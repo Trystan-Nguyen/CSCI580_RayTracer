@@ -606,9 +606,9 @@ AreaLight aLight = AreaLight();
 // ENABLE / DISABLE
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
-bool useAreaLight = false;
-bool useReflection = false;
-bool useAntiAlias = false;
+bool useAreaLight = true;
+bool useReflection = true;
+bool useAntiAlias = true;
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
 
@@ -633,12 +633,12 @@ void configureObject(GzRender* self) {
 	//Vector3 avg = sumPos.Mult(1.0 / numPos);
 	//printf("");
 	
-	/*
-	Vector3 position = Vector3(-14.1650524, 28.0658951, -30.0591621);
+	//*
+	Vector3 position = Vector3(-14, 40, -30);
 
-	aLight.color = Vector3(0.4, 0.4, 0.4);
+	aLight.color = Vector3(0.5, 0.5, 0.5);
 	aLight.position = position;
-	aLight.sideLength = 10;
+	aLight.sideLength = 15;
 	aLight.samplePerSide = 4;
 	//*/
 }
@@ -761,7 +761,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 
 
 	// Quick terminate
-	//*\
+	/*\
 
 	{
 		Vector3 color(0, 0, 0);
@@ -782,7 +782,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 	// Reflection
 	// Recalculate reflective vector
 	Vector3 reflectionColor = { 0,0,0 };
-	if (depth > 1 && triIndex < 2) {
+	if (depth > 1 && useReflection) {
 		Vector3 ray = EyeRay.Mult(-1);
 		float dot_RN = N.DotProduct(ray);
 		if (dot_RN < 0) {
