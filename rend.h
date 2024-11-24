@@ -26,8 +26,8 @@
 #define	MAX_LIGHTS	10		/* how many lights allowed */
 
 #define MAX_TRIANGLES 5000
-#define SAMPLES_PER_PIXEL 100
-#define DEPTH 10
+#define SAMPLES_PER_PIXEL 32
+#define DEPTH 3
 class GzRender{			/* define a renderer */
   
 

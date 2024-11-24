@@ -171,13 +171,15 @@ GzRender::GzRender(int xRes, int yRes)
 	auto material_right = make_shared<metal>(color(0.8, 0.6, 0.2), 0);
 
 	//world.add(make_shared<sphere>(point3(0.0, -100.5, 1.0), 100.0, material_ground));
-	world.add(make_shared<sphere>(point3(0.0, 0.0, 1.2), 0.5, material_center));
+	//world.add(make_shared<sphere>(point3(0.0, 0.0, 1.2), 0.5, material_center));
 	//world.add(make_shared<sphere>(point3(-1.0, 0.0, 1.0), 0.5, material_left));
-	world.add(make_shared<sphere>(point3(1.0, 0.0, 1.0), 0.5, material_right));
-	auto phong_model = make_shared<phong>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, color(0.5, 0.5, 0.5), 0.3);
-	world.add(make_shared<sphere>(point3(-3, 0, 4), 1, phong_model));
-	world.add(make_shared<sphere>(point3(0, -107.5, 1), 100, phong_model));
-	//world.add(make_shared<triangle>(point3(0, -0.5, 1), point3(0, 0, 1), point3(0.5, -0.5, 1)));
+	//world.add(make_shared<sphere>(point3(1.0, 0.0, 1.0), 0.5, material_right));
+
+	auto phong_model = make_shared<phong>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, color(0.5, 0.5, 0.5));
+	auto phong_model2 = make_shared<phong>(color(0.4, 0.4, 0.4), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, color(0.5, 0.5, 0.5), 0.2);
+	world.add(make_shared<sphere>(point3(-11, 0, 16), 4, phong_model));
+	world.add(make_shared<sphere>(point3(0, -107.5, 1), 100, phong_model2));
+	//world.add(make_shared<triangle>(point3(-6, -6, 6), point3(-6, 6, 6), point3(6, -6, 6), vec3(0, 0, 1), vec3(0, 0, 1), vec3(0, 0, 1), phong_model));
 	//world.add(make_shared<triangle>(point3(-33.48, 2.28, 43.59), point3(-6.46, 32.5, 11.03), point3(35.13, 1.91, 17.15)));
 
 }
@@ -586,7 +588,7 @@ int GzRender::GzPutTriangle(int numParts, GzToken* nameList, GzPointer* valueLis
 		phong_model = make_shared<phong>(color(0.2, 0.2, 0.2), color(0.1, 0.1, 0.1), color(0.3, 0.3, 0.3), 32, color(0.2, 0.2, 0.2));
 	}	
 
-	//world.add(make_shared<triangle>(transformedCoords[0], transformedCoords[1], transformedCoords[2], transformedNorms[0], transformedNorms[1], transformedNorms[2], phong_model));
+	world.add(make_shared<triangle>(transformedCoords[0], transformedCoords[1], transformedCoords[2], transformedNorms[0], transformedNorms[1], transformedNorms[2], phong_model));
 	numTriangles++;
 	return GZ_SUCCESS;
 }
@@ -635,8 +637,10 @@ color GzRender::ray_color(const ray& r, int depth, const hittable& world) {
 	if (world.hit(r, 0.001, infinity, rec)) {
 		ray scattered;
 		color attenuation;
+		//check if material is lambertian or metal (other models use in RTin1Weekend)
 		if (rec.mat->scatter(r, rec, attenuation, scattered))
-			return attenuation * ray_color(scattered, depth - 1, world);
+			return attenuation * ray_color(scattered, depth - 1, world	);
+		//Phong model in CSCI580 HW
 		auto phong_material = dynamic_pointer_cast<phong>(rec.mat);
 		auto phong_color = ComputePhongShading(rec);
 		ray& reflected = scattered;
