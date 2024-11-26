@@ -73,8 +73,11 @@ int Application5::Initialize()
 	/*
 	 * initialize the display and the renderer
 	 */
-	m_nWidth = 512;		// frame buffer and display width
-	m_nHeight = 512;    // frame buffer and display height
+	m_nWidth = 256;		// frame buffer and display width
+	m_nHeight = 256;    // frame buffer and display height
+
+	//m_nWidth = 32;		// frame buffer and display width
+	//m_nHeight = 32;    // frame buffer and display height
 
 	m_pRender = new GzRender(m_nWidth, m_nHeight);
 	m_pRender->GzDefault();
@@ -84,9 +87,9 @@ int Application5::Initialize()
 	/* Translation matrix */
 	GzMatrix	scale =
 	{
-		0.5,	0.0,	0.0,	7,
-		0.0,	0.5,	0.0,	7,
-		0.0,	0.0,	0.5,	10,
+		0.5,	0.0,	0.0,	0,
+		0.0,	0.5,	0.0,	0,
+		0.0,	0.0,	0.5,	0,
 		0.0,	0.0,	0.0,	1.0
 	};
 
@@ -141,7 +144,7 @@ int Application5::Initialize()
 	GzLight	light1 = { {-1, 0, 0}, {0.4, 0.4, 0.4} };
 	GzLight	light2 = { {0, -0.7071, -0.7071}, {0.0, 0.0, 0.0} };
 	GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.0, 0.0, 0.0} };
-	GzLight	ambientlight = { {0, 0, 0}, {0.1, 0.1, 0.1} };
+	GzLight	ambientlight = { {0, 0, 0}, {0.6, 0.6, 0.6} };
 
 	/* Material property */
 	GzColor specularCoefficient = { 0.3, 0.3, 0.3 };
@@ -237,41 +240,29 @@ int Application5::Render()
 
 	//------------------------------------------------------------------------------------------------------------------------------
 	// ADD FILES
-	int numFiles = 3;
-	string infiles[] = {"duck.asc", "duck.asc", "ppot.asc" };
-	string inTexures[] = {"duckTex.ppm", "duckTex.ppm", "_1"};
+	int numFiles = 2;
+	string infiles[] = {"duck.asc", "box.asc" };
+	//string infiles[] = {"duck.asc" };
+	string inTexures[] = {"duckTex.ppm", "_1.ppm"};
+	//string inTexures[] = {"duckTex.ppm"};
+
 	GzMatrix	modelTransform[] = {
+		
 		{
-			1.0,	0.0,	0.0,	0.0,
-			0.0,	1.0,	0.0,	0.0,
-			0.0,	0.0,	1.0,	0.0,
+			1.0,	0.0,	0.0,	0,
+			0.0,	1.0,	0.0,	0,
+			0.0,	0.0,	1.0,	-35,
 			0.0,	0.0,	0.0,	1.0
 		},
 		{
-			1.0,	0.0,	0.0,	0.0,
-			0.0,	1.0,	0.0,	0.0,
-			0.0,	0.0,	1.0,	0.0,
-			0.0,	0.0,	0.0,	1.0
-		},
-		{
-			1.0,	0.0,	0.0,	0.0,
-			0.0,	1.0,	0.0,	0.0,
-			0.0,	0.0,	1.0,	0.0,
-			0.0,	0.0,	0.0,	1.0
-		},
-		{
-			1.0,	0.0,	0.0,	0.0,
-			0.0,	1.0,	0.0,	0.0,
-			0.0,	0.0,	1.0,	0.0,
-			0.0,	0.0,	0.0,	1.0
-		},
-		{
-			1.0,	0.0,	0.0,	0.0,
-			0.0,	1.0,	0.0,	0.0,
-			0.0,	0.0,	1.0,	0.0,
+			1,		0.0,	0.0,	0.0,
+			0.0,	1,		0.0,	10,
+			0.0,	0.0,	1,		0,
 			0.0,	0.0,	0.0,	1.0
 		}
 	};
+
+	bool useReflect[] = { false, true };
 
 
 	
@@ -291,6 +282,7 @@ int Application5::Render()
 
 		status |= m_pRender->GzPutAttribute(1, nameList, valueListShader);
 		status |= m_pRender->GzPushMatrix(modelTransform[i]);
+		m_pRender->useReflection = useReflect[i];
 
 		/*
 		* Walk through the list of triangles, set color

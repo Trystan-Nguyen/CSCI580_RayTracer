@@ -68,6 +68,7 @@ public:
 	float* data;
 	bool useTexture = false;
 	std::string textureName = "_0";
+	bool useReflect = false;
 	Triangle::Triangle() {
 		data = new float[37]();
 	}

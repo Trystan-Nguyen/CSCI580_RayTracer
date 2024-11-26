@@ -20,8 +20,8 @@
 #define	MATLEVELS	100		/* how many matrix pushes allowed */
 #define	MAX_LIGHTS	10		/* how many lights allowed */
 
-#define MAX_TRIANGLES 145000
-#define SAMPLES_PER_PIXEL 9 // Count of random samples for each pixel
+#define MAX_TRIANGLES 40000
+#define SAMPLES_PER_PIXEL 4 // Count of random samples for each pixel
 class GzRender{			/* define a renderer */
   
 
@@ -87,12 +87,14 @@ public:
 	int numTriangles;
 
 	void GzRender::RayTrace();
-	void GzRender::RayCast(Vector3* origin, Vector3 direction, int* triangleIndex, Vector3* position, int ignoreIndex = -1);
+	void GzRender::RayCast(Vector3* origin, Vector3 direction, int* triangleIndex, Vector3* position, int ignoreIndex = -1, bool refl = false);
 	
 	Vector3 ComputeShading(int triIndex, Vector3* intersection, Vector3 E, int depth);
 
 	std::string textureName = "-1";
 	bool useTexture = false;
+
+	bool useReflection = false;
 
 };
 #endif
