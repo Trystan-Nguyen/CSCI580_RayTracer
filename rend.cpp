@@ -649,7 +649,7 @@ void configureObject(GzRender* self) {
 	//Vector3 position = Vector3(-3.54513335, 2.71320438, 26.7694759).Subtract(Vector3(6.33856869, 3.95474386, 80.4539642)).Add(Vector3(-3.54513335, 2.71320438, 26.7694759));
 	Vector3 position = Vector3(-120, -35, 0);
 
-	aLight.color = Vector3(0.4, 0.4, 0.4);
+	aLight.color = Vector3(0, 0, 0);
 	aLight.position = position;
 	aLight.sideLength = 15;
 	aLight.samplePerSide = 4;
@@ -772,7 +772,7 @@ Vector3 GzRender::ComputeShading(int triIndex, Vector3* intersection, Vector3 Ey
 	Vector3 illumination(0, 0, 0);
 	Vector3 ka = tri.GetKa();
 	for (int i = 0; i < 3; ++i) {
-		illumination.base[i] = ka.base[i] * this->ambientlight.color[i];
+		illumination.base[i] = baseColor[i] *this->ambientlight.color[i];
 	}
 
 

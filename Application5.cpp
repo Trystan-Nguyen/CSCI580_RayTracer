@@ -144,7 +144,7 @@ int Application5::Initialize()
 	GzLight	light1 = { {-1, 0, 0}, {0.4, 0.4, 0.4} };
 	GzLight	light2 = { {0, -0.7071, -0.7071}, {0.0, 0.0, 0.0} };
 	GzLight	light3 = { {0.7071, 0.0, -0.7071}, {0.0, 0.0, 0.0} };
-	GzLight	ambientlight = { {0, 0, 0}, {0.6, 0.6, 0.6} };
+	GzLight	ambientlight = { {0, 0, 0}, {0.9, 0.9, 0.9} };
 
 	/* Material property */
 	GzColor specularCoefficient = { 0.3, 0.3, 0.3 };
